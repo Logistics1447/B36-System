@@ -1,7 +1,6 @@
 streamlit
-supabase==2.3.0
-gotrue==2.3.0
-httpx==0.26.0
+supabase
+httpx==0.24.1
 pandas
 plotly
 pillow
