@@ -1,6 +1,5 @@
 streamlit
 supabase
-httpx==0.24.1
 pandas
 plotly
 pillow
