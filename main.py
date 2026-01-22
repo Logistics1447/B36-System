@@ -2,6 +2,7 @@
 B36 Hall Management System
 نظام إدارة القاعات اللوجستية
 Powered by Streamlit & Supabase
+التصميم الأصلي v27
 """
 
 import streamlit as st
@@ -18,62 +19,266 @@ load_dotenv()
 
 # إعدادات الصفحة
 st.set_page_config(
-    page_title="B36 System",
+    page_title="B36 System v27",
     page_icon="🏛️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# تحميل CSS مخصص
+# ==================== CSS - التصميم الأصلي v27 ====================
 st.markdown("""
 <style>
-    /* الخط العربي */
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+    /* الخط الأصلي - Alexandria */
+    @import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;600;800&display=swap');
     
     * {
-        font-family: 'Cairo', sans-serif;
+        font-family: 'Alexandria', sans-serif !important;
     }
     
-    /* تحسين الأزرار */
-    .stButton>button {
+    /* ألوان B36 الأصلية - Calm Color Palette */
+    :root {
+        --color-primary: #6B9AC4;
+        --color-secondary: #8BA888;
+        --color-accent: #D4A574;
+        --color-warning: #E8A87C;
+        --color-danger: #C97C7C;
+        --color-success: #88B2AC;
+        --color-info: #9DB4C0;
+        --color-purple: #B8A4C9;
+    }
+    
+    /* إخفاء عناصر Streamlit */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    .main {
+        background-color: #f8fafc;
+        padding: 2rem;
+    }
+    
+    /* Sidebar - التصميم الأصلي الأبيض */
+    [data-testid="stSidebar"] {
+        background: white;
+        border-left: 1px solid #e2e8f0;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+    }
+    
+    [data-testid="stSidebar"] > div:first-child {
+        padding-top: 1rem;
+    }
+    
+    [data-testid="stSidebar"] h2 {
+        font-size: 1.25rem !important;
+        font-weight: 800 !important;
+        color: #1e293b !important;
+        margin-bottom: 0.25rem !important;
+    }
+    
+    [data-testid="stSidebar"] h3 {
+        font-size: 0.75rem !important;
+        color: #94a3b8 !important;
+        font-weight: 400 !important;
+    }
+    
+    /* أزرار Sidebar */
+    [data-testid="stSidebar"] .stButton > button {
         width: 100%;
-        border-radius: 10px;
+        text-align: right;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: #64748b !important;
+        background: transparent;
+        border: none;
+        transition: all 0.2s;
+    }
+    
+    [data-testid="stSidebar"] .stButton > button:hover {
+        background: #f1f5f9;
+        color: #1e293b !important;
+    }
+    
+    /* KPI Cards - البطاقات الأفقية الأصلية */
+    .kpi-container {
+        display: flex;
+        flex-wrap: wrap;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        padding: 1rem;
+        gap: 1.5rem;
+        justify-content: space-around;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 2rem;
+    }
+    
+    .kpi-item {
+        text-align: center;
+        padding: 0 1.5rem;
+        border-right: 1px solid #e2e8f0;
+    }
+    
+    .kpi-item:last-child {
+        border-right: none;
+    }
+    
+    .kpi-label {
+        display: block;
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-bottom: 0.5rem;
+        font-weight: 400;
+    }
+    
+    .kpi-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        display: block;
+    }
+    
+    .kpi-primary { color: #6B9AC4; }
+    .kpi-warning { color: #E8A87C; }
+    .kpi-success { color: #88B2AC; }
+    .kpi-purple { color: #B8A4C9; }
+    .kpi-default { color: #64748b; }
+    
+    /* بطاقات القاعات */
+    .hall-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+        margin-bottom: 1rem;
+    }
+    
+    .hall-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+    
+    .hall-name {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+    
+    .hall-status {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-weight: 600;
+    }
+    
+    .status-open {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+    
+    .status-paused {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    
+    /* Progress bar */
+    .progress-bar-container {
+        width: 100%;
+        height: 8px;
+        background: #f1f5f9;
+        border-radius: 9999px;
+        overflow: hidden;
+        margin: 1rem 0;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        transition: width 0.3s;
+        border-radius: 9999px;
+    }
+    
+    .progress-success { background: #88B2AC; }
+    .progress-warning { background: #E8A87C; }
+    .progress-danger { background: #C97C7C; }
+    
+    /* الأزرار */
+    .stButton > button {
+        border-radius: 12px;
         font-weight: 600;
         padding: 0.5rem 1rem;
+        border: none;
+        transition: all 0.2s;
+        font-size: 0.875rem;
     }
     
-    /* البطاقات */
-    .metric-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 1.5rem;
-        border-radius: 15px;
-        color: white;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    .stButton > button:hover {
+        transform: translateY(-1px);
+    }
+    
+    /* Input fields */
+    .stTextInput > div > div > input,
+    .stNumberInput > div > div > input {
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        padding: 0.75rem;
+        font-weight: 600;
+        text-align: center;
+        transition: all 0.2s;
+    }
+    
+    .stTextInput > div > div > input:focus,
+    .stNumberInput > div > div > input:focus {
+        border-color: #6B9AC4;
+        box-shadow: 0 0 0 3px rgba(107, 154, 196, 0.1);
+    }
+    
+    /* الجداول */
+    .dataframe {
+        border-radius: 12px !important;
+        border: 1px solid #e2e8f0 !important;
+        overflow: hidden;
+    }
+    
+    .dataframe thead tr th {
+        background: #f8fafc !important;
+        color: #64748b !important;
+        font-weight: 700 !important;
+        font-size: 0.875rem !important;
+        padding: 1rem !important;
+        border-bottom: 2px solid #e2e8f0 !important;
+    }
+    
+    .dataframe tbody tr td {
+        padding: 0.875rem !important;
+        font-size: 0.875rem !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+    }
+    
+    .dataframe tbody tr:hover {
+        background: #f8fafc !important;
+    }
+    
+    /* Expander */
+    .streamlit-expanderHeader {
+        background: #f8fafc;
+        border-radius: 12px;
+        font-weight: 600;
+        color: #334155;
+        padding: 1rem;
+        border: 1px solid #e2e8f0;
     }
     
     /* العناوين */
     h1, h2, h3 {
-        color: #667eea;
-    }
-    
-    /* تحسين الجداول */
-    .dataframe {
-        border-radius: 10px;
-        overflow: hidden;
-    }
-    
-    /* Sidebar */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-    }
-    
-    [data-testid="stSidebar"] * {
-        color: white !important;
+        color: #1e293b !important;
+        font-weight: 800 !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# ==================== Session State ====================
+# ==================== Session State - بدون تغيير ====================
 
 def init_session_state():
     """تهيئة Session State"""
@@ -86,27 +291,38 @@ def init_session_state():
 
 init_session_state()
 
-# ==================== Authentication ====================
+# ==================== Authentication - بدون تغيير ====================
 
 def login_page():
-    """صفحة تسجيل الدخول"""
-    st.markdown("<h1 style='text-align: center;'>🏛️ نظام B36</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: #666;'>نظام إدارة القاعات اللوجستية</h3>", unsafe_allow_html=True)
+    """صفحة تسجيل الدخول - التصميم الأصلي v27"""
+    
+    st.markdown("""
+    <div style='text-align: center; margin-top: 5rem; margin-bottom: 2rem;'>
+        <h1 style='font-size: 2.5rem; font-weight: 800; color: #1e293b; margin-bottom: 0.5rem;'>
+            B36 System
+        </h1>
+        <span style='background: linear-gradient(90deg, #6B9AC4 0%, #88B2AC 100%);
+                    color: white; padding: 0.25rem 0.75rem; border-radius: 9999px;
+                    font-size: 0.75rem; font-weight: 700;'>
+            v27 Production
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
-        st.markdown("---")
-        
         with st.form("login_form"):
-            username = st.text_input("👤 اسم المستخدم", placeholder="admin")
-            password = st.text_input("🔒 كلمة المرور", type="password", placeholder="••••")
+            username = st.text_input("", placeholder="اسم المستخدم", label_visibility="collapsed")
+            password = st.text_input("", type="password", placeholder="كلمة المرور", label_visibility="collapsed")
             
-            col_login1, col_login2 = st.columns(2)
-            with col_login1:
-                submit = st.form_submit_button("🚀 دخول", use_container_width=True)
-            with col_login2:
-                test_connection = st.form_submit_button("🔌 اختبار الاتصال", use_container_width=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            col_btn1, col_btn2 = st.columns(2)
+            with col_btn1:
+                submit = st.form_submit_button("🚀 دخول", use_container_width=True, type="primary")
+            with col_btn2:
+                test = st.form_submit_button("🔌 اختبار", use_container_width=True)
         
         if submit:
             if username and password:
@@ -117,27 +333,37 @@ def login_page():
                     st.session_state.logged_in = True
                     st.session_state.user = user
                     st.success(f"مرحباً {user['full_name']}! 🎉")
+                    st.balloons()
                     st.rerun()
                 else:
                     st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة")
             else:
-                st.warning("⚠️ يرجى إدخال اسم المستخدم وكلمة المرور")
+                st.warning("⚠️ يرجى إدخال البيانات")
         
-        if test_connection:
-            with st.spinner("جاري اختبار الاتصال..."):
+        if test:
+            with st.spinner("جاري الاختبار..."):
                 try:
                     db = get_database()
-                    st.success("✅ الاتصال بقاعدة البيانات ناجح!")
-                    st.info("📊 يمكنك الآن تسجيل الدخول")
+                    st.success("✅ الاتصال ناجح!")
                 except Exception as e:
-                    st.error(f"❌ فشل الاتصال: {e}")
+                    st.error(f"❌ فشل: {e}")
         
-        st.markdown("---")
-        with st.expander("ℹ️ معلومات تجريبية"):
-            st.code("""
-اسم المستخدم: admin
-كلمة المرور: 1234
-            """)
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style='border-top: 1px solid #e2e8f0; padding-top: 1rem; text-align: center;'>
+            <p style='font-size: 0.625rem; color: #94a3b8; margin-bottom: 0.5rem; font-weight: 700;'>
+                تم التطوير بواسطة
+            </p>
+            <p style='font-size: 0.875rem; font-weight: 700; color: #1e293b;'>عبدالرحمن المالكي</p>
+            <p style='font-size: 0.875rem; font-weight: 700; color: #1e293b;'>عبدالعزيز الأحمدي</p>
+            <p style='font-size: 0.875rem; font-weight: 700; color: #1e293b;'>عبدالعزيز الذبياني</p>
+            <div style='margin-top: 0.75rem; font-size: 0.75rem; color: #94a3b8;'>
+                <span style='font-weight: 700;'>Made with</span>
+                <span style='color: #ef4444; font-size: 1rem;'>❤️</span>
+                <span style='font-weight: 700;'>2026</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 def logout():
     """تسجيل الخروج"""
@@ -148,49 +374,82 @@ def logout():
 # ==================== Dashboard ====================
 
 def show_dashboard():
-    """عرض لوحة المعلومات الرئيسية"""
-    st.title("📊 لوحة المعلومات")
+    """لوحة المعلومات - التصميم الأصلي"""
+    st.markdown("<h1 style='margin-bottom: 2rem;'>لوحة التحكم</h1>", unsafe_allow_html=True)
     
     db = get_database()
     stats = db.get_statistics()
     
-    # البطاقات الإحصائية
-    col1, col2, col3, col4, col5 = st.columns(5)
+    # KPI Cards الأفقية - التصميم الأصلي
+    st.markdown(f"""
+    <div class='kpi-container'>
+        <div class='kpi-item'>
+            <span class='kpi-label'>داخل المبنى</span>
+            <span class='kpi-value kpi-primary'>{stats.get('total_current', 0)}</span>
+        </div>
+        <div class='kpi-item'>
+            <span class='kpi-label'>ينتظر خارجاً</span>
+            <span class='kpi-value kpi-warning'>{stats.get('outdoor_queue', 0)}</span>
+        </div>
+        <div class='kpi-item'>
+            <span class='kpi-label'>الطاقة</span>
+            <span class='kpi-value kpi-default'>{stats.get('total_capacity', 0)}</span>
+        </div>
+        <div class='kpi-item'>
+            <span class='kpi-label'>تمت خدمتهم</span>
+            <span class='kpi-value kpi-success'>{stats.get('served_count', 0)}</span>
+        </div>
+        <div class='kpi-item'>
+            <span class='kpi-label'>الإشغال</span>
+            <span class='kpi-value kpi-purple'>{stats.get('occupancy_rate', 0)}%</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # إدارة سريعة
+    st.markdown("### ⚡ إدارة سريعة")
+    col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.metric(
-            label="✅ تمت خدمتهم",
-            value=stats.get('served_count', 0),
-            delta="إجمالي"
-        )
+        st.markdown("**📥 قائمة الانتظار**")
+        col_btn1, col_btn2 = st.columns(2)
+        with col_btn1:
+            if st.button("➕ إضافة", key="add_queue", use_container_width=True):
+                result = db.update_outdoor_queue(1)
+                if result['success']:
+                    db.log_activity(st.session_state.user['username'], 
+                                   "OUTDOOR_ADD", "إضافة زائر")
+                    st.success("✅ تم")
+                    st.rerun()
+        with col_btn2:
+            if st.button("➖ خصم", key="remove_queue", use_container_width=True):
+                result = db.update_outdoor_queue(-1)
+                if result['success']:
+                    db.log_activity(st.session_state.user['username'],
+                                   "OUTDOOR_REMOVE", "خصم زائر")
+                    st.success("✅ تم")
+                    st.rerun()
     
     with col2:
-        st.metric(
-            label="⏳ قائمة الانتظار",
-            value=stats.get('outdoor_queue', 0),
-            delta="في الخارج"
-        )
+        st.markdown("**🔄 تحديث**")
+        if st.button("🔄 تحديث البيانات", use_container_width=True):
+            st.rerun()
     
     with col3:
-        st.metric(
-            label="🏛️ داخل القاعات",
-            value=stats.get('total_current', 0),
-            delta=f"من {stats.get('total_capacity', 0)}"
-        )
-    
-    with col4:
-        st.metric(
-            label="📈 إجمالي النظام",
-            value=stats.get('total_in_system', 0),
-            delta="زائر"
-        )
-    
-    with col5:
-        st.metric(
-            label="📊 نسبة الإشغال",
-            value=f"{stats.get('occupancy_rate', 0)}%",
-            delta="من السعة"
-        )
+        st.markdown("**🗑️ تصفير**")
+        if st.button("🗑️ إعادة تعيين", use_container_width=True):
+            with st.expander("تأكيد"):
+                col_r1, col_r2 = st.columns(2)
+                with col_r1:
+                    if st.button("تصفير المخدومين"):
+                        db.reset_settings(reset_served=True)
+                        st.success("✅ تم")
+                        st.rerun()
+                with col_r2:
+                    if st.button("تصفير الانتظار"):
+                        db.reset_settings(reset_queue=True)
+                        st.success("✅ تم")
+                        st.rerun()
     
     st.markdown("---")
     
@@ -198,27 +457,31 @@ def show_dashboard():
     col_chart1, col_chart2 = st.columns(2)
     
     with col_chart1:
-        st.subheader("📊 توزيع الإشغال")
-        
-        # رسم بياني دائري
+        st.markdown("### 📊 توزيع الإشغال")
         fig_pie = go.Figure(data=[go.Pie(
             labels=['مشغول', 'متاح'],
             values=[stats.get('total_current', 0), 
                    stats.get('total_capacity', 0) - stats.get('total_current', 0)],
             hole=.6,
-            marker_colors=['#667eea', '#e0e7ff']
+            marker_colors=['#6B9AC4', '#f1f5f9']
         )])
         fig_pie.update_layout(
             height=300,
             showlegend=True,
-            annotations=[dict(text=f"{stats.get('occupancy_rate', 0)}%", 
-                            x=0.5, y=0.5, font_size=20, showarrow=False)]
+            font=dict(family="Alexandria", size=12),
+            annotations=[dict(
+                text=f"{stats.get('occupancy_rate', 0)}%",
+                x=0.5, y=0.5,
+                font_size=28,
+                font_family="Alexandria",
+                font_color="#6B9AC4",
+                showarrow=False
+            )]
         )
         st.plotly_chart(fig_pie, use_container_width=True)
     
     with col_chart2:
-        st.subheader("🏛️ حالة القاعات")
-        
+        st.markdown("### 🏛️ حالة القاعات")
         halls = db.get_all_halls()
         if halls:
             df_halls = pd.DataFrame(halls)
@@ -226,67 +489,18 @@ def show_dashboard():
                 df_halls,
                 x='name',
                 y=['current', 'capacity'],
-                title='',
-                labels={'value': 'العدد', 'name': 'القاعة'},
                 barmode='group',
-                color_discrete_sequence=['#667eea', '#e0e7ff']
+                color_discrete_sequence=['#6B9AC4', '#f1f5f9']
             )
-            fig_bar.update_layout(height=300)
+            fig_bar.update_layout(
+                height=300,
+                font=dict(family="Alexandria", size=12),
+                showlegend=False
+            )
             st.plotly_chart(fig_bar, use_container_width=True)
-        else:
-            st.info("لا توجد قاعات متاحة")
-    
-    # إدارة سريعة
-    st.markdown("---")
-    st.subheader("⚡ إدارة سريعة")
-    
-    col_quick1, col_quick2, col_quick3 = st.columns(3)
-    
-    with col_quick1:
-        st.markdown("##### 📥 قائمة الانتظار")
-        col_btn1, col_btn2 = st.columns(2)
-        with col_btn1:
-            if st.button("➕ إضافة", key="add_queue"):
-                result = db.update_outdoor_queue(1)
-                if result['success']:
-                    db.log_activity(st.session_state.user['username'], 
-                                   "OUTDOOR_ADD", "إضافة زائر للانتظار")
-                    st.success("تمت الإضافة ✅")
-                    st.rerun()
-        with col_btn2:
-            if st.button("➖ خصم", key="remove_queue"):
-                result = db.update_outdoor_queue(-1)
-                if result['success']:
-                    db.log_activity(st.session_state.user['username'],
-                                   "OUTDOOR_REMOVE", "خصم زائر من الانتظار")
-                    st.success("تم الخصم ✅")
-                    st.rerun()
-    
-    with col_quick2:
-        st.markdown("##### 🔄 تحديث القاعات")
-        if st.button("🔄 تحديث البيانات", use_container_width=True):
-            st.rerun()
-    
-    with col_quick3:
-        st.markdown("##### 🗑️ إعادة تعيين")
-        if st.button("🗑️ تصفير العدادات", use_container_width=True):
-            with st.expander("تأكيد التصفير"):
-                col_reset1, col_reset2 = st.columns(2)
-                with col_reset1:
-                    if st.button("تصفير المخدومين"):
-                        db.reset_settings(reset_served=True)
-                        st.success("تم التصفير ✅")
-                        st.rerun()
-                with col_reset2:
-                    if st.button("تصفير الانتظار"):
-                        db.reset_settings(reset_queue=True)
-                        st.success("تم التصفير ✅")
-                        st.rerun()
     
     # آخر النشاطات
-    st.markdown("---")
-    st.subheader("📋 آخر النشاطات")
-    
+    st.markdown("### 📋 آخر النشاطات")
     logs = db.get_activity_logs(limit=10)
     if logs:
         df_logs = pd.DataFrame(logs)
@@ -294,22 +508,16 @@ def show_dashboard():
         st.dataframe(
             df_logs[['timestamp', 'user', 'action', 'details']],
             use_container_width=True,
-            hide_index=True,
-            column_config={
-                "timestamp": "الوقت",
-                "user": "المستخدم",
-                "action": "العملية",
-                "details": "التفاصيل"
-            }
+            hide_index=True
         )
     else:
-        st.info("لا توجد نشاطات مسجلة")
+        st.info("لا توجد نشاطات")
 
 # ==================== Halls Management ====================
 
 def show_halls():
-    """صفحة إدارة القاعات"""
-    st.title("🏛️ إدارة القاعات")
+    """إدارة القاعات - التصميم الأصلي"""
+    st.markdown("<h1 style='margin-bottom: 2rem;'>🏛️ إدارة القاعات</h1>", unsafe_allow_html=True)
     
     db = get_database()
     
@@ -319,164 +527,159 @@ def show_halls():
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                hall_name = st.text_input("اسم القاعة", placeholder="قاعة 1")
+                hall_name = st.text_input("اسم القاعة")
             with col2:
-                hall_type = st.selectbox("نوع القاعة", ["MAIN", "WAITING", "INTERVIEW", "NORMAL"])
+                hall_type = st.selectbox("النوع", ["MAIN", "WAITING", "INTERVIEW", "NORMAL"])
             with col3:
                 capacity = st.number_input("السعة", min_value=1, value=100)
             
-            submitted = st.form_submit_button("➕ إضافة القاعة")
-            
-            if submitted and hall_name:
-                result = db.create_hall(hall_name, hall_type, capacity)
-                if result['success']:
-                    st.success(f"✅ تم إضافة القاعة: {hall_name}")
-                    db.log_activity(st.session_state.user['username'],
-                                   "HALL_CREATE", f"إنشاء قاعة: {hall_name}")
-                    st.rerun()
-                else:
-                    st.error(f"❌ خطأ: {result['error']}")
+            if st.form_submit_button("➕ إضافة", use_container_width=True):
+                if hall_name:
+                    result = db.create_hall(hall_name, hall_type, capacity)
+                    if result['success']:
+                        st.success(f"✅ تمت إضافة: {hall_name}")
+                        db.log_activity(st.session_state.user['username'],
+                                       "HALL_CREATE", f"إنشاء قاعة: {hall_name}")
+                        st.rerun()
+                    else:
+                        st.error(f"❌ خطأ: {result['error']}")
     
-    st.markdown("---")
+    st.markdown("<br>", unsafe_allow_html=True)
     
     # عرض القاعات
     halls = db.get_all_halls()
     
     if not halls:
-        st.info("لا توجد قاعات. أضف قاعة جديدة للبدء.")
+        st.info("لا توجد قاعات. أضف قاعة للبدء.")
         return
     
-    # فلترة
-    col_filter1, col_filter2 = st.columns([3, 1])
-    with col_filter1:
-        status_filter = st.multiselect(
-            "فلترة حسب الحالة",
-            ["OPEN", "PAUSED"],
-            default=["OPEN", "PAUSED"]
-        )
-    
-    filtered_halls = [h for h in halls if h['status'] in status_filter]
-    
-    # عرض القاعات في شبكة
+    # عرض القاعات في grid
     cols = st.columns(3)
     
-    for idx, hall in enumerate(filtered_halls):
+    for idx, hall in enumerate(halls):
         with cols[idx % 3]:
-            with st.container():
-                # حساب النسبة
-                percentage = (hall['current'] / hall['capacity'] * 100) if hall['capacity'] > 0 else 0
-                
-                # تحديد اللون
-                if hall['status'] == 'PAUSED':
-                    color = "🔴"
-                    status_text = "متوقفة"
-                elif percentage >= 90:
-                    color = "🔴"
-                    status_text = "ممتلئة"
-                elif percentage >= 70:
-                    color = "🟡"
-                    status_text = "مكتظة"
-                else:
-                    color = "🟢"
-                    status_text = "نشطة"
-                
-                st.markdown(f"### {color} {hall['name']}")
-                st.markdown(f"**الحالة:** {status_text}")
-                
-                # Progress bar
-                st.progress(percentage / 100)
-                st.markdown(f"**{hall['current']} / {hall['capacity']}** ({percentage:.1f}%)")
-                
-                # الأزرار
-                col_btn1, col_btn2, col_btn3 = st.columns(3)
-                
-                with col_btn1:
-                    if st.button("➕", key=f"add_{hall['id']}", 
-                               disabled=(hall['status'] == 'PAUSED' or hall['current'] >= hall['capacity'])):
-                        db.update_hall_current(hall['id'], 1)
-                        db.update_outdoor_queue(-1)
-                        db.log_activity(st.session_state.user['username'],
-                                       "ENTRY", f"دخول زائر إلى {hall['name']}", hall['id'])
-                        st.rerun()
-                
-                with col_btn2:
-                    if st.button("➖", key=f"remove_{hall['id']}",
-                               disabled=(hall['current'] <= 0)):
-                        db.update_hall_current(hall['id'], -1)
-                        db.update_served_count(1)
-                        db.log_activity(st.session_state.user['username'],
-                                       "EXIT", f"خروج زائر من {hall['name']}", hall['id'])
-                        st.rerun()
-                
-                with col_btn3:
-                    pause_text = "▶️" if hall['status'] == 'PAUSED' else "⏸️"
-                    if st.button(pause_text, key=f"pause_{hall['id']}"):
-                        db.toggle_hall_status(hall['id'])
-                        action = "RESUME" if hall['status'] == 'PAUSED' else "PAUSE"
-                        db.log_activity(st.session_state.user['username'],
-                                       action, f"تغيير حالة {hall['name']}", hall['id'])
-                        st.rerun()
-                
-                # تعديل يدوي
-                with st.expander("✏️ تعديل يدوي"):
-                    new_value = st.number_input(
-                        "العدد الجديد",
-                        min_value=0,
-                        max_value=hall['capacity'],
-                        value=hall['current'],
-                        key=f"manual_{hall['id']}"
-                    )
-                    if st.button("✅ تطبيق", key=f"apply_{hall['id']}"):
-                        db.set_hall_current(hall['id'], new_value)
-                        db.log_activity(st.session_state.user['username'],
-                                       "MANUAL_SET", 
-                                       f"تعديل يدوي: {hall['name']} من {hall['current']} إلى {new_value}",
-                                       hall['id'])
-                        st.success("تم التحديث ✅")
-                        st.rerun()
-                
-                st.markdown("---")
+            percentage = (hall['current'] / hall['capacity'] * 100) if hall['capacity'] > 0 else 0
+            is_paused = hall['status'] == 'PAUSED'
+            
+            # تحديد اللون
+            if is_paused:
+                progress_class = "progress-danger"
+                status_class = "status-paused"
+                status_text = "⏸️ متوقفة"
+            elif percentage >= 90:
+                progress_class = "progress-danger"
+                status_class = "status-open"
+                status_text = "🔴 ممتلئة"
+            elif percentage >= 70:
+                progress_class = "progress-warning"
+                status_class = "status-open"
+                status_text = "🟡 مكتظة"
+            else:
+                progress_class = "progress-success"
+                status_class = "status-open"
+                status_text = "🟢 نشطة"
+            
+            # البطاقة
+            st.markdown(f"""
+            <div class='hall-card'>
+                <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;'>
+                    <span class='hall-name'>{hall['name']}</span>
+                    <span class='hall-status {status_class}'>{status_text}</span>
+                </div>
+                <div class='progress-bar-container'>
+                    <div class='progress-bar {progress_class}' style='width: {percentage}%'></div>
+                </div>
+                <div style='text-align: center; margin-top: 0.5rem;'>
+                    <span style='font-size: 1.5rem; font-weight: 800; color: #1e293b;'>{hall['current']}</span>
+                    <span style='color: #94a3b8; margin: 0 0.5rem;'>/</span>
+                    <span style='color: #64748b; font-weight: 600;'>{hall['capacity']}</span>
+                    <span style='color: #94a3b8; font-size: 0.875rem; margin-right: 0.5rem;'>({percentage:.0f}%)</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # الأزرار
+            col_btn1, col_btn2, col_btn3 = st.columns(3)
+            
+            with col_btn1:
+                if st.button("➕", key=f"add_{hall['id']}", 
+                           disabled=(is_paused or hall['current'] >= hall['capacity']),
+                           use_container_width=True):
+                    db.update_hall_current(hall['id'], 1)
+                    db.update_outdoor_queue(-1)
+                    db.log_activity(st.session_state.user['username'],
+                                   "ENTRY", f"دخول إلى {hall['name']}", hall['id'])
+                    st.rerun()
+            
+            with col_btn2:
+                if st.button("➖", key=f"remove_{hall['id']}",
+                           disabled=(hall['current'] <= 0),
+                           use_container_width=True):
+                    db.update_hall_current(hall['id'], -1)
+                    db.update_served_count(1)
+                    db.log_activity(st.session_state.user['username'],
+                                   "EXIT", f"خروج من {hall['name']}", hall['id'])
+                    st.rerun()
+            
+            with col_btn3:
+                pause_text = "▶️" if is_paused else "⏸️"
+                if st.button(pause_text, key=f"pause_{hall['id']}",
+                           use_container_width=True):
+                    db.toggle_hall_status(hall['id'])
+                    action = "RESUME" if is_paused else "PAUSE"
+                    db.log_activity(st.session_state.user['username'],
+                                   action, f"تغيير حالة {hall['name']}", hall['id'])
+                    st.rerun()
+            
+            # تعديل يدوي
+            with st.expander("✏️ تعديل يدوي"):
+                new_value = st.number_input(
+                    "العدد الجديد",
+                    min_value=0,
+                    max_value=hall['capacity'],
+                    value=hall['current'],
+                    key=f"manual_{hall['id']}"
+                )
+                if st.button("✅ تطبيق", key=f"apply_{hall['id']}"):
+                    db.set_hall_current(hall['id'], new_value)
+                    db.log_activity(st.session_state.user['username'],
+                                   "MANUAL_SET",
+                                   f"تعديل: {hall['name']} من {hall['current']} إلى {new_value}",
+                                   hall['id'])
+                    st.success("✅ تم")
+                    st.rerun()
 
 # ==================== Reports ====================
 
 def show_reports():
-    """صفحة التقارير والإحصائيات"""
-    st.title("📊 التقارير والإحصائيات")
+    """التقارير"""
+    st.markdown("<h1 style='margin-bottom: 2rem;'>📈 التقارير</h1>", unsafe_allow_html=True)
     
     db = get_database()
     
-    # اختيار نوع التقرير
-    report_type = st.selectbox(
-        "اختر نوع التقرير",
-        ["إحصائيات عامة", "سجل النشاطات", "تقرير القاعات", "البلاغات"]
-    )
+    tab1, tab2, tab3 = st.tabs(["📊 إحصائيات", "📋 السجل", "🏛️ القاعات"])
     
-    st.markdown("---")
-    
-    if report_type == "إحصائيات عامة":
+    with tab1:
         stats = db.get_statistics()
-        
         col1, col2 = st.columns(2)
-        
         with col1:
-            st.subheader("📈 الإحصائيات الرئيسية")
+            st.markdown("### الملخص")
             st.json(stats)
-        
         with col2:
-            st.subheader("📊 الرسم البياني")
+            st.markdown("### رسم بياني")
             fig = go.Figure(data=[
-                go.Bar(name='الحالي', x=['القاعات', 'الانتظار', 'المخدومين'],
-                      y=[stats.get('total_current', 0), 
-                         stats.get('outdoor_queue', 0),
-                         stats.get('served_count', 0)],
-                      marker_color='#667eea')
+                go.Bar(
+                    x=['القاعات', 'الانتظار', 'المخدومين'],
+                    y=[stats.get('total_current', 0),
+                       stats.get('outdoor_queue', 0),
+                       stats.get('served_count', 0)],
+                    marker_color='#6B9AC4'
+                )
             ])
-            fig.update_layout(height=400)
+            fig.update_layout(height=350, font=dict(family="Alexandria"))
             st.plotly_chart(fig, use_container_width=True)
     
-    elif report_type == "سجل النشاطات":
-        st.subheader("📋 سجل النشاطات")
-        
+    with tab2:
         limit = st.slider("عدد السجلات", 10, 100, 50)
         logs = db.get_activity_logs(limit=limit)
         
@@ -484,116 +687,60 @@ def show_reports():
             df = pd.DataFrame(logs)
             df['timestamp'] = pd.to_datetime(df['timestamp'])
             
-            # إحصائيات
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("إجمالي العمليات", len(logs))
+                st.metric("إجمالي", len(logs))
             with col2:
                 entries = len([l for l in logs if l['action'] == 'ENTRY'])
-                st.metric("عمليات الدخول", entries)
+                st.metric("دخول", entries)
             with col3:
                 exits = len([l for l in logs if l['action'] == 'EXIT'])
-                st.metric("عمليات الخروج", exits)
+                st.metric("خروج", exits)
             
-            # الجدول
-            st.dataframe(
-                df[['timestamp', 'user', 'action', 'details']],
-                use_container_width=True,
-                hide_index=True
-            )
+            st.dataframe(df, use_container_width=True, hide_index=True)
             
-            # تصدير
             csv = df.to_csv(index=False).encode('utf-8-sig')
             st.download_button(
-                label="📥 تحميل CSV",
-                data=csv,
-                file_name=f"activity_log_{datetime.now().strftime('%Y%m%d')}.csv",
-                mime="text/csv"
+                "📥 تحميل CSV",
+                csv,
+                f"activity_log_{datetime.now().strftime('%Y%m%d')}.csv",
+                "text/csv"
             )
         else:
             st.info("لا توجد سجلات")
     
-    elif report_type == "تقرير القاعات":
-        st.subheader("🏛️ تقرير القاعات")
-        
+    with tab3:
         halls = db.get_all_halls()
         if halls:
             df = pd.DataFrame(halls)
             
-            # الإحصائيات
-            st.markdown("#### الإحصائيات")
             col1, col2, col3, col4 = st.columns(4)
             with col1:
-                st.metric("عدد القاعات", len(halls))
+                st.metric("القاعات", len(halls))
             with col2:
-                st.metric("السعة الكلية", df['capacity'].sum())
+                st.metric("السعة", df['capacity'].sum())
             with col3:
-                st.metric("الإشغال الكلي", df['current'].sum())
+                st.metric("الإشغال", df['current'].sum())
             with col4:
                 rate = (df['current'].sum() / df['capacity'].sum() * 100) if df['capacity'].sum() > 0 else 0
-                st.metric("نسبة الإشغال", f"{rate:.1f}%")
+                st.metric("النسبة", f"{rate:.1f}%")
             
-            # الجدول
-            st.markdown("#### تفاصيل القاعات")
-            st.dataframe(
-                df[['name', 'type', 'capacity', 'current', 'status']],
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "name": "الاسم",
-                    "type": "النوع",
-                    "capacity": "السعة",
-                    "current": "الحالي",
-                    "status": "الحالة"
-                }
-            )
-        else:
-            st.info("لا توجد قاعات")
-    
-    elif report_type == "البلاغات":
-        st.subheader("🚨 البلاغات")
-        
-        incidents = db.get_incidents()
-        if incidents:
-            df = pd.DataFrame(incidents)
-            
-            # فلترة
-            status = st.multiselect(
-                "فلترة حسب الحالة",
-                ["NEW", "IN_PROGRESS", "RESOLVED"],
-                default=["NEW", "IN_PROGRESS"]
-            )
-            
-            filtered = [i for i in incidents if i['status'] in status]
-            
-            for incident in filtered:
-                with st.expander(f"🚨 {incident['description'][:50]}..."):
-                    col1, col2 = st.columns([2, 1])
-                    with col1:
-                        st.markdown(f"**الوصف:** {incident['description']}")
-                        st.markdown(f"**المستخدم:** {incident['user']}")
-                        st.markdown(f"**الوقت:** {incident['created_at']}")
-                    with col2:
-                        st.markdown(f"**الأولوية:** {incident['priority']}")
-                        st.markdown(f"**الحالة:** {incident['status']}")
-        else:
-            st.info("لا توجد بلاغات")
+            st.dataframe(df, use_container_width=True, hide_index=True)
 
 # ==================== Settings ====================
 
 def show_settings():
-    """صفحة الإعدادات"""
-    st.title("⚙️ الإعدادات")
+    """الإعدادات"""
+    st.markdown("<h1 style='margin-bottom: 2rem;'>⚙️ الإعدادات</h1>", unsafe_allow_html=True)
     
     db = get_database()
     
-    tab1, tab2, tab3 = st.tabs(["👥 المستخدمين", "🔧 النظام", "📊 قاعدة البيانات"])
+    tab1, tab2 = st.tabs(["👥 المستخدمين", "🔧 النظام"])
     
     with tab1:
-        st.subheader("إدارة المستخدمين")
+        st.markdown("### إدارة المستخدمين")
         
-        # إضافة مستخدم
-        with st.expander("➕ إضافة مستخدم جديد"):
+        with st.expander("➕ إضافة مستخدم"):
             with st.form("add_user_form"):
                 col1, col2 = st.columns(2)
                 with col1:
@@ -607,91 +754,83 @@ def show_settings():
                     if new_username and new_password and new_fullname:
                         result = db.create_user(new_username, new_password, new_fullname, new_role)
                         if result['success']:
-                            st.success("✅ تم إضافة المستخدم")
+                            st.success("✅ تم")
                             st.rerun()
                         else:
                             st.error(f"❌ خطأ: {result['error']}")
         
-        # عرض المستخدمين
         users = db.get_all_users()
         if users:
             df = pd.DataFrame(users)
-            st.dataframe(
-                df[['username', 'full_name', 'role', 'created_at']],
-                use_container_width=True,
-                hide_index=True
-            )
+            st.dataframe(df, use_container_width=True, hide_index=True)
     
     with tab2:
-        st.subheader("إعدادات النظام")
-        
-        st.markdown("#### 🔄 إعادة تعيين النظام")
+        st.markdown("### إعدادات النظام")
+        st.markdown("#### 🔄 إعادة تعيين")
         
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("🗑️ تصفير عدادات المخدومين", use_container_width=True):
+            if st.button("🗑️ تصفير المخدومين", use_container_width=True):
                 db.reset_settings(reset_served=True)
-                st.success("تم التصفير ✅")
-        
+                st.success("✅ تم")
         with col2:
-            if st.button("🗑️ تصفير قائمة الانتظار", use_container_width=True):
+            if st.button("🗑️ تصفير الانتظار", use_container_width=True):
                 db.reset_settings(reset_queue=True)
-                st.success("تم التصفير ✅")
+                st.success("✅ تم")
         
-        st.warning("⚠️ هذه العملية لا يمكن التراجع عنها!")
-    
-    with tab3:
-        st.subheader("معلومات قاعدة البيانات")
-        
-        st.markdown(f"""
-        - **النوع:** Supabase (PostgreSQL)
-        - **الحالة:** 🟢 متصل
-        - **URL:** {os.getenv('SUPABASE_URL', 'غير محدد')}
-        """)
-        
-        if st.button("🔌 اختبار الاتصال"):
-            try:
-                stats = db.get_statistics()
-                st.success("✅ الاتصال ناجح!")
-                st.json(stats)
-            except Exception as e:
-                st.error(f"❌ فشل الاتصال: {e}")
+        st.warning("⚠️ لا يمكن التراجع")
 
 # ==================== Main App ====================
 
 def main():
     """التطبيق الرئيسي"""
     
-    # التحقق من تسجيل الدخول
     if not st.session_state.logged_in:
         login_page()
         return
     
     # Sidebar
     with st.sidebar:
-        st.image("https://via.placeholder.com/150x150/667eea/ffffff?text=B36", width=150)
-        st.markdown(f"### مرحباً {st.session_state.user['full_name']} 👋")
-        st.markdown(f"**الدور:** {st.session_state.user['role']}")
-        st.markdown("---")
+        st.markdown("""
+        <div style='padding: 1.5rem 0; border-bottom: 1px solid #e2e8f0;'>
+            <h2>B36 Admin</h2>
+            <h3>v27 Production</h3>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
         
         # القائمة
-        menu_items = {
-            "dashboard": "📊 لوحة المعلومات",
-            "halls": "🏛️ إدارة القاعات",
-            "reports": "📈 التقارير",
-            "settings": "⚙️ الإعدادات"
-        }
+        menu_items = [
+            ("dashboard", "🏠", "لوحة التحكم"),
+            ("halls", "🏛️", "إدارة القاعات"),
+            ("reports", "📊", "التقارير"),
+            ("settings", "⚙️", "الإعدادات")
+        ]
         
-        for key, label in menu_items.items():
-            if st.button(label, key=f"menu_{key}", use_container_width=True):
+        for key, icon, label in menu_items:
+            if st.button(f"{icon}  {label}", key=f"menu_{key}", use_container_width=True):
                 st.session_state.current_page = key
                 st.rerun()
         
-        st.markdown("---")
-        if st.button("🚪 تسجيل الخروج", use_container_width=True):
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        
+        # معلومات المستخدم
+        st.markdown(f"""
+        <div style='border-top: 1px solid #e2e8f0; padding-top: 1rem;'>
+            <p style='font-size: 0.875rem; font-weight: 700; color: #1e293b;'>
+                {st.session_state.user['full_name']}
+            </p>
+            <p style='font-size: 0.75rem; color: #64748b;'>{st.session_state.user['role']}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        if st.button("🚪 تسجيل خروج", use_container_width=True):
             logout()
     
-    # عرض الصفحة المحددة
+    # عرض الصفحة
     page = st.session_state.current_page
     
     if page == "dashboard":
@@ -702,8 +841,6 @@ def main():
         show_reports()
     elif page == "settings":
         show_settings()
-
-# ==================== Run App ====================
 
 if __name__ == "__main__":
     main()
