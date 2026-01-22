@@ -219,4 +219,45 @@ class B36Database:
                 "served_count": served_count,
                 "occupancy_rate": occupancy_rate
             }
-        except Exception as e
+        except Exception as e:
+            print(f"Stats Error: {e}")
+            return {
+                "total_current": 0, "total_capacity": 0, 
+                "outdoor_queue": 0, "served_count": 0, 
+                "occupancy_rate": 0
+            }
+
+    # ==========================================
+    # 6. دوال مساعدة داخلية
+    # ==========================================
+    def _fetch_data(self, table):
+        try:
+            return self.client.table(table).select("*").execute().data
+        except:
+            return []
+
+    def _insert_data(self, table, data):
+        try:
+            self.client.table(table).insert(data).execute()
+            return {'success': True}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+@st.cache_resource
+def get_database():
+    try:
+        url = st.secrets["SUPABASE_URL"]
+        key = st.secrets["SUPABASE_KEY"]
+    except Exception:
+        try:
+            url = os.getenv("SUPABASE_URL")
+            key = os.getenv("SUPABASE_KEY")
+        except Exception:
+            url = None
+            key = None
+
+    if not url or not key:
+        st.error("بيانات الاتصال مفقودة.")
+        st.stop()
+
+    return B36Database(url, key)
