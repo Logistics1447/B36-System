@@ -1,607 +1,115 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, doc, onSnapshot, getDoc, getDocs, setDoc, updateDoc, increment, writeBatch, deleteDoc, serverTimestamp, query, orderBy, limit, where, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B36 System v29 RBAC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="antialiased bg-slate-50 dark:bg-slate-900">
 
-const firebaseConfig = {
-    apiKey: "AIzaSyAHzKx8e5cXP33zfSON_X1RC4Ek7JukaPg",
-    authDomain: "b36-hall-mgmt.firebaseapp.com",
-    projectId: "b36-hall-mgmt",
-    storageBucket: "b36-hall-mgmt.firebasestorage.app",
-    messagingSenderId: "972582807480",
-    appId: "1:972582807480:web:bf5080de188b588325d14d"
-};
+<div id="toastContainer" class="fixed top-4 left-4 z-50 space-y-2"></div>
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// ============================================
-// RBAC SYSTEM - نظام الأدوار والصلاحيات (v29)
-// ============================================
-
-const ROLES = {
-    ADMIN: 'مدير_عام',
-    EXTERNAL_SUPERVISOR: 'منظم_خارجي_مشرف',
-    EXTERNAL_REGULAR: 'منظم_خارجي_عادي',
-    INTERNAL_SUPERVISOR: 'منظم_داخلي_مشرف',
-    INTERNAL_REGULAR: 'منظم_داخلي_عادي',
-    PATH_ORGANIZER: 'منظم_مسار',
-    VIEWER: 'عارض'
-};
-
-const PERMISSIONS = {
-    MANAGE_OUTSIDE_COUNT: 'manage_outside_count',
-    VIEW_OUTSIDE_COUNT: 'view_outside_count',
-    MANAGE_HALLS: 'manage_halls',
-    ASSIGN_USERS: 'assign_users',
-    VIEW_AUDIT_LOG: 'view_audit_log',
-    VIEW_ANALYTICS: 'view_analytics',
-    VIEW_DASHBOARD: 'view_dashboard',
-    VIEW_MY_HALL: 'view_my_hall'
-};
-
-const ROLE_PERMISSIONS = {
-    [ROLES.ADMIN]: Object.values(PERMISSIONS),
-    [ROLES.EXTERNAL_SUPERVISOR]: [PERMISSIONS.MANAGE_OUTSIDE_COUNT, PERMISSIONS.VIEW_DASHBOARD],
-    [ROLES.EXTERNAL_REGULAR]: [PERMISSIONS.MANAGE_OUTSIDE_COUNT, PERMISSIONS.VIEW_DASHBOARD],
-    [ROLES.INTERNAL_SUPERVISOR]: [PERMISSIONS.VIEW_DASHBOARD, PERMISSIONS.VIEW_ANALYTICS],
-    [ROLES.INTERNAL_REGULAR]: [PERMISSIONS.VIEW_MY_HALL, PERMISSIONS.VIEW_DASHBOARD],
-    [ROLES.PATH_ORGANIZER]: [PERMISSIONS.VIEW_DASHBOARD],
-    [ROLES.VIEWER]: [PERMISSIONS.VIEW_ANALYTICS, PERMISSIONS.VIEW_DASHBOARD]
-};
-
-function hasPermission(permission) {
-    if (!currentUser) return false;
-    const rolePermissions = ROLE_PERMISSIONS[currentUser.role] || [];
-    return rolePermissions.includes(permission);
-}
-
-// ============================================
-// STATE (المتغيرات الأساسية)
-// ============================================
-
-let currentUser = null;
-let halls = [];
-let users = [];
-let auditLogs = [];
-let globalStats = { served: 0, outdoor_queue: 0 };
-let currentView = 'dashboard';
-
-// ============================================
-// UI HELPERS (المساعدات البصرية)
-// ============================================
-
-window.toggleSidebar = () => {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    sidebar.classList.toggle('drawer-closed');
-    if (sidebar.classList.contains('drawer-closed')) {
-        overlay.classList.add('hidden');
-    } else {
-        overlay.classList.remove('hidden');
-    }
-};
-
-window.toggleDark = () => {
-    document.documentElement.classList.toggle('dark');
-    localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
-};
-
-if (localStorage.getItem('darkMode') === 'true') {
-    document.documentElement.classList.add('dark');
-}
-
-function showToast(message, type = 'info') {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    const colors = { success: 'bg-green-500', error: 'bg-red-500', warning: 'bg-amber-500', info: 'bg-blue-500' };
-    const icons = { success: 'ph-check-circle', error: 'ph-x-circle', warning: 'ph-warning', info: 'ph-info' };
-    toast.className = `toast ${colors[type]} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2`;
-    toast.innerHTML = `<i class="ph ${icons[type]} text-xl"></i><span class="text-sm font-bold">${message}</span>`;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
-
-async function logActivity(action, details, entityType = null, entityId = null) {
-    try {
-        await addDoc(collection(db, "audit_logs"), {
-            userId: currentUser.id,
-            userRole: currentUser.role,
-            userName: currentUser.fullName || currentUser.id,
-            action: action,
-            details: details,
-            entityType: entityType,
-            entityId: entityId,
-            timestamp: serverTimestamp()
-        });
-    } catch (e) {
-        console.error('Log error:', e);
-    }
-}
-
-// ============================================
-// LOGIN & NAVIGATION (تسجيل الدخول والتنقل)
-// ============================================
-
-window.login = async () => {
-    const u = document.getElementById('username').value.toLowerCase().trim();
-    const p = document.getElementById('password').value;
-    try {
-        const d = await getDoc(doc(db, "users", u));
-        if (d.exists() && d.data().pass === p) {
-            currentUser = { id: u, ...d.data() };
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('mainApp').classList.remove('hidden');
-            document.getElementById('userRoleDisplay').textContent = currentUser.role;
-            buildNavigation();
-            listenToData();
-            showView(currentUser.role === ROLES.VIEWER ? 'analytics' : 'dashboard');
-            showToast(`مرحباً ${currentUser.fullName || currentUser.id}`, 'success');
-            await logActivity('LOGIN', `تسجيل دخول للنظام`);
-        } else {
-            showToast('بيانات دخول خاطئة', 'error');
-        }
-    } catch (e) {
-        showToast('خطأ في الاتصال', 'error');
-    }
-};
-
-function buildNavigation() {
-    const navMenu = document.getElementById('navMenu');
-    navMenu.innerHTML = '';
-    const menuItems = [];
-    if (hasPermission(PERMISSIONS.VIEW_DASHBOARD)) menuItems.push({ view: 'dashboard', icon: 'ph-squares-four', text: 'لوحة التحكم', color: '#6B9AC4' });
-    if (hasPermission(PERMISSIONS.VIEW_MY_HALL) && currentUser.assignedHallId) menuItems.push({ view: 'my-hall', icon: 'ph-door', text: 'قاعتي', color: '#88B2AC' });
-    if (hasPermission(PERMISSIONS.VIEW_ANALYTICS)) menuItems.push({ view: 'analytics', icon: 'ph-chart-bar', text: 'الإحصائيات', color: '#8BA888' });
-    if (hasPermission(PERMISSIONS.MANAGE_HALLS)) {
-        menuItems.push({ view: 'manage-halls', icon: 'ph-building', text: 'إدارة القاعات', color: '#6B9AC4' });
-        menuItems.push({ view: 'manage-users', icon: 'ph-users', text: 'إدارة المستخدمين', color: '#6B9AC4' });
-    }
-    if (hasPermission(PERMISSIONS.VIEW_AUDIT_LOG)) menuItems.push({ view: 'audit-log', icon: 'ph-clock-clockwise', text: 'سجل العمليات', color: '#B8A4C9' });
-
-    menuItems.forEach(item => {
-        const btn = document.createElement('button');
-        btn.onclick = () => showView(item.view);
-        btn.className = 'w-full flex items-center gap-3 p-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition';
-        btn.innerHTML = `<i class="${item.icon} text-xl" style="color: ${item.color}"></i> ${item.text}`;
-        navMenu.appendChild(btn);
-    });
-}
-
-window.showView = (view) => {
-    currentView = view;
-    renderCurrentView();
-    if (window.innerWidth < 1024) toggleSidebar();
-};
-
-// ============================================
-// DATA LISTENERS (جلب البيانات بشكل حي)
-// ============================================
-
-function listenToData() {
-    onSnapshot(collection(db, "halls"), (s) => {
-        halls = [];
-        s.forEach(d => halls.push({ id: d.id, ...d.data() }));
-        // هذا السطر الآمن لمنع اختفاء القاعات
-        halls.sort((a, b) => (parseInt((a.name || '').replace(/\D/g,'')) || 999) - (parseInt((b.name || '').replace(/\D/g,'')) || 999));
-        updateKPIs();
-        renderCurrentView();
-    });
-    
-    onSnapshot(doc(db, "settings", "global_config"), (s) => {
-        if (s.exists()) {
-            globalStats = { served: s.data().served_count || 0, outdoor_queue: s.data().outdoor_queue || 0 };
-            updateKPIs();
-        }
-    });
-
-    if (hasPermission(PERMISSIONS.ASSIGN_USERS)) {
-        onSnapshot(collection(db, "users"), (s) => {
-            users = [];
-            s.forEach(d => users.push({ id: d.id, ...d.data() }));
-            renderCurrentView();
-        });
-    }
-
-    if (hasPermission(PERMISSIONS.VIEW_AUDIT_LOG)) {
-        onSnapshot(query(collection(db, "audit_logs"), orderBy("timestamp", "desc"), limit(100)), (s) => {
-            auditLogs = [];
-            s.forEach(d => auditLogs.push({ id: d.id, ...d.data() }));
-            renderCurrentView();
-        });
-    }
-}
-
-function updateKPIs() {
-    const kpiContainer = document.getElementById('kpiContainer');
-    const activeHalls = halls.filter(h => h.active);
-    const totalIndoor = activeHalls.reduce((a, b) => a + (b.current || 0), 0);
-    const totalCap = activeHalls.reduce((a, b) => a + (b.capacity || 0), 0);
-    const occupancyRate = totalCap > 0 ? Math.round((totalIndoor / totalCap) * 100) : 0;
-    
-    if (hasPermission(PERMISSIONS.MANAGE_HALLS) || currentUser.role === ROLES.VIEWER) {
-        kpiContainer.innerHTML = `
-            <div class="text-center p-3 border-r dark:border-slate-700">
-                <span class="block text-xs text-slate-400 mb-1">ينتظرون خارجاً</span>
-                <span class="text-2xl font-black text-[#E8A87C]">${globalStats.outdoor_queue}</span>
-            </div>
-            <div class="text-center p-3 border-r dark:border-slate-700">
-                <span class="block text-xs text-slate-400 mb-1">داخل المبنى</span>
-                <span class="text-2xl font-black text-[#6B9AC4]">${totalIndoor}</span>
-            </div>
-            <div class="text-center p-3 border-r dark:border-slate-700">
-                <span class="block text-xs text-slate-400 mb-1">الطاقة الإجمالية</span>
-                <span class="text-2xl font-black text-slate-500">${totalCap}</span>
-            </div>
-            <div class="text-center p-3 border-r dark:border-slate-700">
-                <span class="block text-xs text-slate-400 mb-1">تمت خدمتهم</span>
-                <span class="text-2xl font-black text-[#88B2AC]">${globalStats.served}</span>
-            </div>
-            <div class="text-center p-3 border-r dark:border-slate-700">
-                <span class="block text-xs text-slate-400 mb-1">الإشغال العام</span>
-                <span class="text-2xl font-black text-[#B8A4C9]">${occupancyRate}%</span>
-            </div>
-        `;
-    } else if (currentUser.role === ROLES.EXTERNAL_SUPERVISOR || currentUser.role === ROLES.EXTERNAL_REGULAR) {
-        kpiContainer.innerHTML = `
-            <div class="text-center p-3 col-span-5">
-                <span class="block text-xs text-slate-400 mb-1">إجمالي المنتظرين بالخارج</span>
-                <span class="text-4xl font-black text-[#E8A87C]">${globalStats.outdoor_queue}</span>
-            </div>
-        `;
-    } else if (currentUser.role === ROLES.INTERNAL_REGULAR && currentUser.assignedHallId) {
-        const myHall = halls.find(h => h.id === currentUser.assignedHallId);
-        if (myHall) {
-            const myOcc = Math.round((myHall.current / myHall.capacity) * 100);
-            kpiContainer.innerHTML = `
-                <div class="text-center p-3 col-span-2 border-r dark:border-slate-700">
-                    <span class="block text-xs text-slate-400 mb-1">حضور قاعتي</span>
-                    <span class="text-2xl font-black text-[#6B9AC4]">${myHall.current} / ${myHall.capacity}</span>
-                </div>
-                <div class="text-center p-3 col-span-3">
-                    <span class="block text-xs text-slate-400 mb-1">إشغال قاعتي</span>
-                    <span class="text-2xl font-black text-[#B8A4C9]">${myOcc}%</span>
-                </div>
-            `;
-        }
-    }
-}
-
-// ============================================
-// VIEW RENDERING (الواجهات المدمجة من v28)
-// ============================================
-
-function renderCurrentView() {
-    if (currentView === 'dashboard') renderDashboard();
-    else if (currentView === 'my-hall') renderMyHall();
-    else if (currentView === 'analytics') renderAnalytics();
-    else if (currentView === 'manage-halls') renderManageHalls();
-    else if (currentView === 'manage-users') renderManageUsers();
-    else if (currentView === 'audit-log') renderAuditLog();
-}
-
-function renderDashboard() {
-    const content = document.getElementById('contentArea');
-    let html = `<h2 class="text-2xl font-black mb-6">لوحة التحكم</h2>`;
-
-    if (hasPermission(PERMISSIONS.MANAGE_OUTSIDE_COUNT)) {
-        html += `
-        <div class="bg-gradient-to-br from-[#E8A87C] to-[#D89A6D] p-6 rounded-2xl text-white shadow-lg mb-6 max-w-md">
-            <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i class="ph ph-users text-2xl"></i> الساحة الخارجية</h3>
-            <div class="flex justify-between items-end mb-4">
-                <span class="text-5xl font-black">${globalStats.outdoor_queue}</span>
-                <span class="text-sm opacity-90">زائر ينتظر</span>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="adjustOutdoor(-1)" class="flex-1 py-3 bg-white/20 rounded-xl font-bold transition hover:bg-white/30"><i class="ph ph-minus"></i> خروج</button>
-                <button onclick="adjustOutdoor(1)" class="flex-1 py-3 bg-white text-[#E8A87C] rounded-xl font-bold transition hover:bg-white/90"><i class="ph ph-plus"></i> دخول</button>
-            </div>
-        </div>`;
-    }
-
-    html += `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">`;
-    const canManageHalls = hasPermission(PERMISSIONS.MANAGE_HALLS) || currentUser.role === ROLES.INTERNAL_SUPERVISOR;
-
-    halls.filter(h => h.active).forEach(r => {
-        const full = r.current >= r.capacity;
-        const ratio = Math.min((r.current / r.capacity) * 100, 100);
-        let barColor = ratio > 80 ? (full ? 'bg-red-500' : 'bg-amber-500') : 'bg-blue-500';
-
-        html += `
-        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border dark:border-slate-700 shadow-sm transition hover:shadow-lg">
-            <h3 class="font-bold text-lg mb-2">${r.name} <span class="text-xs text-slate-400 font-normal">(${r.type || 'عام'})</span></h3>
-            <div class="flex justify-between items-end mb-3">
-                <span class="text-5xl font-black">${r.current}</span>
-                <span class="text-xs text-slate-400">السعة: ${r.capacity}</span>
-            </div>
-            <div class="w-full h-3 bg-slate-100 dark:bg-slate-700 rounded-full mb-5 overflow-hidden">
-                <div class="h-full ${barColor} transition-all duration-500" style="width:${ratio}%"></div>
-            </div>
-            ${canManageHalls ? `
-                <div class="flex gap-2">
-                    <button onclick="adjustHall('${r.id}', -1)" class="flex-1 py-3 border-2 dark:border-slate-600 rounded-xl font-bold"><i class="ph ph-minus"></i></button>
-                    <button onclick="adjustHall('${r.id}', 1)" class="flex-1 py-3 bg-[#6B9AC4] text-white rounded-xl font-bold ${full ? 'opacity-50' : ''}" ${full ? 'disabled' : ''}><i class="ph ph-plus"></i></button>
-                </div>
-            ` : ''}
-        </div>`;
-    });
-
-    html += `</div>`;
-    content.innerHTML = html;
-}
-
-function renderMyHall() {
-    const content = document.getElementById('contentArea');
-    const myHall = halls.find(h => h.id === currentUser.assignedHallId);
-    if (!myHall) {
-        content.innerHTML = `<p class="text-red-500 font-bold">لم يتم تعيين قاعة لك بعد.</p>`;
-        return;
-    }
-    const full = myHall.current >= myHall.capacity;
-    content.innerHTML = `
-    <h2 class="text-2xl font-black mb-6">قاعتي: ${myHall.name}</h2>
-    <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl max-w-md mx-auto text-center border dark:border-slate-700 shadow-lg">
-        <h3 class="text-4xl font-black mb-2">${myHall.current} / ${myHall.capacity}</h3>
-        <p class="text-slate-500 mb-8">الزوار في القاعة</p>
-        <div class="flex gap-4">
-            <button onclick="adjustHall('${myHall.id}', -1)" class="flex-1 py-4 bg-red-100 text-red-600 rounded-xl font-bold text-lg"><i class="ph ph-minus"></i> خروج زائر</button>
-            <button onclick="adjustHall('${myHall.id}', 1)" class="flex-1 py-4 bg-green-100 text-green-700 rounded-xl font-bold text-lg ${full ? 'opacity-50' : ''}" ${full ? 'disabled' : ''}><i class="ph ph-plus"></i> دخول زائر</button>
+<div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800 p-4">
+    <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md border-2 border-slate-200 dark:border-slate-700">
+        <div class="text-center mb-6">
+            <h1 class="text-4xl font-black text-slate-800 dark:text-white mb-2">B36 System</h1>
+            <span class="inline-block text-xs bg-gradient-to-r from-[#6B9AC4] to-[#88B2AC] text-white px-3 py-1 rounded-full font-bold">v29 RBAC</span>
         </div>
-    </div>`;
-}
-
-function renderAnalytics() {
-    const content = document.getElementById('contentArea');
-    const activeRooms = halls.filter(r => r.active);
-    const sorted = [...activeRooms].sort((a, b) => (b.current / b.capacity) - (a.current / a.capacity));
-    const mostBusy = sorted[0];
-
-    content.innerHTML = `
-    <h2 class="text-2xl font-black mb-6">الإحصائيات المتقدمة</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm">
-            <h3 class="font-bold text-lg mb-4 text-[#88B2AC]"><i class="ph ph-trophy"></i> القاعة الأكثر ازدحاماً</h3>
-            ${mostBusy ? `<div class="flex justify-between items-center"><span class="text-2xl font-black">${mostBusy.name}</span><span class="text-4xl font-black text-[#88B2AC]">${Math.round((mostBusy.current/mostBusy.capacity)*100)}%</span></div>` : '-'}
-        </div>
-    </div>
-    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-slate-50 dark:bg-slate-900"><tr class="text-right"><th class="p-3">القاعة</th><th class="p-3">الحضور</th><th class="p-3">السعة</th><th class="p-3">الإشغال</th></tr></thead>
-            <tbody>${activeRooms.map(r => {
-                const ratio = Math.round((r.current / r.capacity) * 100);
-                return `<tr class="border-t dark:border-slate-700"><td class="p-3 font-bold">${r.name}</td><td class="p-3">${r.current}</td><td class="p-3">${r.capacity}</td><td class="p-3"><span class="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded font-bold">${ratio}%</span></td></tr>`;
-            }).join('')}</tbody>
-        </table>
-    </div>`;
-}
-
-function renderManageHalls() {
-    const content = document.getElementById('contentArea');
-    if (!hasPermission(PERMISSIONS.MANAGE_HALLS)) {
-        content.innerHTML = `<div class="bg-red-100 text-red-600 p-6 rounded-2xl font-bold">عذراً، لا تملك صلاحية الوصول لهذه الصفحة.</div>`;
-        return;
-    }
-
-    let html = `
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-black">إدارة القاعات</h2>
-        <button onclick="openAddHallModal()" class="px-4 py-2 bg-gradient-to-r from-[#6B9AC4] to-[#88B2AC] text-white rounded-xl font-bold hover:opacity-90 transition flex items-center gap-2 shadow-lg">
-            <i class="ph ph-plus-circle text-xl"></i> إضافة قاعة جديدة
-        </button>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">`;
-
-    halls.forEach(h => {
-        const ratio = h.capacity > 0 ? Math.round((h.current / h.capacity) * 100) : 0;
-        let barColor = ratio >= 100 ? 'bg-red-500' : ratio >= 80 ? 'bg-amber-500' : 'bg-green-500';
         
-        html += `
-        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm hover:shadow-md transition ${!h.active ? 'opacity-60' : ''}">
-            <div class="flex justify-between items-start mb-4">
-                <div>
-                    <h3 class="font-bold text-lg">${h.name}</h3>
-                    <span class="text-xs px-2 py-1 rounded ${h.active ? 'bg-green-100 text-[#88B2AC]' : 'bg-slate-100'}">${h.active ? 'مفعّلة' : 'معطّلة'}</span>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="editHall('${h.id}')" class="p-2 text-[#6B9AC4]"><i class="ph ph-pencil-simple text-xl"></i></button>
-                    <button onclick="deleteHall('${h.id}', '${h.name}')" class="p-2 text-[#C97C7C]"><i class="ph ph-trash text-xl"></i></button>
-                </div>
-            </div>
-            <div class="space-y-3 text-sm">
-                <div class="flex justify-between"><span class="text-slate-500">السعة</span><span class="font-bold">${h.capacity}</span></div>
-                <div class="flex justify-between"><span class="text-slate-500">الحضور</span><span class="font-bold">${h.current}</span></div>
-                <div class="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div class="h-full ${barColor}" style="width: ${Math.min(ratio, 100)}%"></div>
-                </div>
-            </div>
-        </div>`;
-    });
-    content.innerHTML = html + `</div>`;
-}
-
-function renderManageUsers() {
-    const content = document.getElementById('contentArea');
-    let html = `
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-black">إدارة المستخدمين</h2>
-        <button onclick="openAddUserModal()" class="px-4 py-2 bg-[#6B9AC4] text-white rounded-xl font-bold flex items-center gap-2"><i class="ph ph-user-plus text-xl"></i> مستخدم جديد</button>
+        <form onsubmit="event.preventDefault(); login();" class="space-y-4 mb-6">
+            <input type="text" id="username" placeholder="اسم المستخدم" class="w-full p-3 border-2 rounded-xl text-center font-bold">
+            <input type="password" id="password" placeholder="كلمة المرور" class="w-full p-3 border-2 rounded-xl text-center font-bold">
+            <button type="submit" class="w-full bg-gradient-to-r from-[#6B9AC4] to-[#88B2AC] text-white p-3 rounded-xl font-bold">دخول</button>
+        </form>
     </div>
-    <div class="bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-slate-50 dark:bg-slate-900"><tr class="text-right"><th class="p-4">المستخدم</th><th class="p-4">الدور</th><th class="p-4">القاعة</th><th class="p-4">إجراءات</th></tr></thead>
-            <tbody class="divide-y dark:divide-slate-700">`;
+</div>
 
-    users.forEach(u => {
-        const assignedHall = halls.find(h => h.id === u.assignedHallId);
-        html += `
-            <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                <td class="p-4 font-bold">${u.id} <span class="text-xs text-slate-500 font-normal">(${u.fullName || ''})</span></td>
-                <td class="p-4"><span class="bg-blue-100 text-[#6B9AC4] dark:bg-blue-900/30 px-2 py-1 rounded text-xs font-bold">${u.role}</span></td>
-                <td class="p-4">${assignedHall ? assignedHall.name : '-'}</td>
-                <td class="p-4">
-                    <button onclick="deleteUser('${u.id}')" class="text-[#C97C7C] p-2" ${u.role === ROLES.ADMIN ? 'disabled' : ''}><i class="ph ph-trash text-xl"></i></button>
-                </td>
-            </tr>`;
-    });
-    content.innerHTML = html + '</tbody></table></div>';
-}
+<div id="mainApp" class="hidden min-h-screen">
+    <aside id="sidebar" class="drawer-closed w-64 bg-white dark:bg-slate-800 border-l fixed h-full flex flex-col shadow-lg z-40">
+        <div class="p-6 border-b">
+            <h2 class="font-black text-xl">B36 v29</h2>
+            <div class="mt-3 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
+                <p class="text-xs text-slate-500">الدور الحالي</p>
+                <p id="userRoleDisplay" class="text-sm font-bold text-[#6B9AC4]">--</p>
+            </div>
+        </div>
+        <nav id="navMenu" class="flex-1 p-4 space-y-2 overflow-y-auto"></nav>
+        <div class="p-4 border-t"><button onclick="location.reload()" class="w-full py-2 bg-red-100 text-[#C97C7C] rounded-lg text-xs font-bold">تسجيل خروج</button></div>
+    </aside>
 
-function renderAuditLog() {
-    const content = document.getElementById('contentArea');
-    let html = `<h2 class="text-2xl font-black mb-6">سجل العمليات</h2><div class="bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 overflow-x-auto"><table class="w-full text-sm"><thead class="bg-slate-50 dark:bg-slate-900"><tr class="text-right"><th class="p-4">الوقت</th><th class="p-4">المستخدم</th><th class="p-4">العملية</th><th class="p-4">التفاصيل</th></tr></thead><tbody class="divide-y dark:divide-slate-700">`;
-    auditLogs.forEach(log => {
-        const time = log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString('ar-SA') : 'الآن';
-        html += `<tr><td class="p-4 text-xs text-slate-500">${time}</td><td class="p-4 font-bold">${log.userName}</td><td class="p-4">${log.action}</td><td class="p-4 text-slate-600 dark:text-slate-400">${log.details}</td></tr>`;
-    });
-    content.innerHTML = html + '</tbody></table></div>';
-}
+    <main class="flex-1 lg:mr-64 p-8 pt-20 lg:pt-8">
+        <div id="kpiContainer" class="grid grid-cols-5 bg-white dark:bg-slate-800 rounded-xl shadow-sm p-3 mb-8 gap-4 border"></div>
+        <div id="contentArea"></div>
+    </main>
+</div>
 
-// ============================================
-// SYSTEM ACTIONS (العمليات ووظائف الأزرار)
-// ============================================
+<div id="hallModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+        <h3 class="font-bold text-xl mb-6 flex items-center gap-2">
+            <i class="ph ph-door-open text-[#6B9AC4] text-2xl"></i>
+            <span id="hallModalTitle">إضافة قاعة جديدة</span>
+        </h3>
+        <div class="space-y-4">
+            <input type="hidden" id="hallId">
+            <div>
+                <label class="block text-sm font-bold mb-2">اسم القاعة</label>
+                <input type="text" id="hallName" class="w-full p-3 border-2 rounded-xl font-bold dark:bg-slate-700 dark:border-slate-600 outline-none focus:border-[#6B9AC4]">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold mb-2">السعة القصوى</label>
+                    <input type="number" id="hallCapacity" class="w-full p-3 border-2 rounded-xl font-bold dark:bg-slate-700 dark:border-slate-600 outline-none focus:border-[#6B9AC4]">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">النوع</label>
+                    <select id="hallType" class="w-full p-3 border-2 rounded-xl font-bold dark:bg-slate-700 dark:border-slate-600 outline-none focus:border-[#6B9AC4]">
+                        <option value="انتظار">انتظار</option>
+                        <option value="مقابلات">مقابلات</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700 rounded-xl">
+                <div>
+                    <p class="font-bold text-sm">القاعة مفعّلة</p>
+                </div>
+                <input type="checkbox" id="hallActive" class="w-6 h-6" checked>
+            </div>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeModal('hallModal')" class="flex-1 bg-slate-100 p-3 rounded-xl font-bold">إلغاء</button>
+            <button onclick="saveHall()" class="flex-1 bg-[#6B9AC4] text-white p-3 rounded-xl font-bold">حفظ</button>
+        </div>
+    </div>
+</div>
 
-window.adjustOutdoor = async (dir) => {
-    if (dir === -1 && globalStats.outdoor_queue <= 0) return;
-    await updateDoc(doc(db, "settings", "global_config"), { outdoor_queue: increment(dir) });
-    await logActivity(dir === 1 ? 'ADD_OUTDOOR' : 'REMOVE_OUTDOOR', `${dir === 1 ? 'إضافة' : 'خصم'} زائر من الانتظار الخارجي`);
-};
+<div id="userModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+        <h3 class="font-bold text-xl mb-6">إضافة مستخدم</h3>
+        <div class="space-y-4">
+            <input type="hidden" id="userId">
+            <input type="text" id="userName" placeholder="اسم المستخدم" class="w-full p-3 border-2 rounded-xl font-bold">
+            <input type="password" id="userPassword" placeholder="كلمة المرور" class="w-full p-3 border-2 rounded-xl font-bold">
+            <input type="text" id="userFullName" placeholder="الاسم الكامل" class="w-full p-3 border-2 rounded-xl font-bold">
+            <select id="userRole" onchange="toggleHallSelect()" class="w-full p-3 border-2 rounded-xl font-bold">
+                <option value="مدير_عام">مدير عام</option>
+                <option value="منظم_داخلي_عادي">منظم داخلي</option>
+            </select>
+            <div id="hallSelectContainer" class="hidden">
+                <select id="userHall" class="w-full p-3 border-2 rounded-xl font-bold"></select>
+            </div>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeModal('userModal')" class="flex-1 bg-slate-100 p-3 rounded-xl font-bold">إلغاء</button>
+            <button onclick="saveUser()" class="flex-1 bg-[#6B9AC4] text-white p-3 rounded-xl font-bold">حفظ</button>
+        </div>
+    </div>
+</div>
 
-window.adjustHall = async (id, dir) => {
-    const r = halls.find(x => x.id === id);
-    if (dir === 1) {
-        if (r.current >= r.capacity) return showToast('القاعة ممتلئة', 'warning');
-        if (globalStats.outdoor_queue <= 0) return showToast('لا يوجد زوار في الانتظار', 'warning');
-        const b = writeBatch(db);
-        b.update(doc(db, "halls", id), { current: increment(1) });
-        b.update(doc(db, "settings", "global_config"), { outdoor_queue: increment(-1) });
-        await b.commit();
-        await logActivity('ENTRY', 'دخول زائر للقاعة', 'HALL', id);
-    } else {
-        if (r.current <= 0) return;
-        const b = writeBatch(db);
-        b.update(doc(db, "halls", id), { current: increment(-1) });
-        b.update(doc(db, "settings", "global_config"), { served_count: increment(1) });
-        await b.commit();
-        await logActivity('EXIT', 'خروج زائر من القاعة', 'HALL', id);
-    }
-};
-
-// ============================================
-// HALL MANAGEMENT FUNCTIONS (تم إصلاحها بالكامل)
-// ============================================
-
-window.openAddHallModal = () => {
-    document.getElementById('hallModalTitle').innerText = 'إضافة قاعة جديدة';
-    document.getElementById('hallId').value = '';
-    document.getElementById('hallName').value = '';
-    document.getElementById('hallCapacity').value = '40';
-    document.getElementById('hallType').value = 'مقابلات';
-    document.getElementById('hallActive').checked = true;
-    document.getElementById('hallModal').classList.remove('hidden');
-};
-
-window.editHall = (hallId) => {
-    const hall = halls.find(h => h.id === hallId);
-    if (!hall) return;
-    document.getElementById('hallModalTitle').innerText = 'تعديل القاعة';
-    document.getElementById('hallId').value = hall.id;
-    document.getElementById('hallName').value = hall.name || '';
-    document.getElementById('hallCapacity').value = hall.capacity || 0;
-    document.getElementById('hallType').value = hall.type || 'مقابلات';
-    document.getElementById('hallActive').checked = hall.active !== false;
-    document.getElementById('hallModal').classList.remove('hidden');
-};
-
-window.saveHall = async () => {
-    const hallId = document.getElementById('hallId').value;
-    const hallName = document.getElementById('hallName').value.trim();
-    const hallCapacity = parseInt(document.getElementById('hallCapacity').value);
-    const hallType = document.getElementById('hallType').value;
-    const hallActive = document.getElementById('hallActive').checked;
-    
-    if (!hallName || isNaN(hallCapacity) || hallCapacity < 1) {
-        showToast('يرجى كتابة اسم القاعة والسعة بشكل صحيح', 'error');
-        return;
-    }
-    
-    const isNew = !hallId;
-    const finalId = isNew ? `hall_${Date.now()}` : hallId;
-    let currentCount = 0;
-    if (!isNew) {
-        const existingHall = halls.find(h => h.id === finalId);
-        if (existingHall) currentCount = existingHall.current || 0;
-    }
-    
-    const hallData = {
-        name: hallName,
-        capacity: hallCapacity,
-        type: hallType,
-        active: hallActive,
-        current: currentCount,
-        status: 'OPEN'
-    };
-    
-    try {
-        await setDoc(doc(db, "halls", finalId), hallData);
-        await logActivity(isNew ? 'HALL_ADD' : 'HALL_EDIT', `${isNew ? 'إضافة' : 'تعديل'} قاعة: ${hallName}`, 'HALL', finalId);
-        closeModal('hallModal');
-        showToast(isNew ? 'تمت إضافة القاعة بنجاح' : 'تم تعديل القاعة', 'success');
-    } catch (e) {
-        showToast('حدث خطأ أثناء الحفظ', 'error');
-    }
-};
-
-window.deleteHall = async (id, hallName) => { 
-    if(confirm('متأكد من الحذف؟')) { 
-        await deleteDoc(doc(db, "halls", id)); 
-        await logActivity('HALL_DELETE', `حذف قاعة: ${hallName}`, 'HALL', id);
-        showToast('تم الحذف', 'success'); 
-    } 
-};
-
-window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
-
-// ============================================
-// USER MANAGEMENT FUNCTIONS
-// ============================================
-
-window.openAddUserModal = () => { 
-    document.getElementById('userId').value = ''; 
-    document.getElementById('userName').value = ''; 
-    document.getElementById('userRole').value = ROLES.INTERNAL_REGULAR;
-    toggleHallSelect();
-    document.getElementById('userModal').classList.remove('hidden'); 
-};
-
-window.toggleHallSelect = () => {
-    const role = document.getElementById('userRole').value;
-    const container = document.getElementById('hallSelectContainer');
-    if (role === ROLES.INTERNAL_REGULAR) {
-        container.classList.remove('hidden');
-        document.getElementById('userHall').innerHTML = halls.map(h => `<option value="${h.id}">${h.name}</option>`).join('');
-    } else {
-        container.classList.add('hidden');
-    }
-};
-
-window.saveUser = async () => {
-    const id = document.getElementById('userName').value.trim();
-    if (!id) return;
-    await setDoc(doc(db, "users", id), {
-        pass: document.getElementById('userPassword').value,
-        fullName: document.getElementById('userFullName').value,
-        role: document.getElementById('userRole').value,
-        assignedHallId: document.getElementById('userRole').value === ROLES.INTERNAL_REGULAR ? document.getElementById('userHall').value : null
-    });
-    closeModal('userModal'); showToast('تم إضافة المستخدم', 'success');
-};
-
-window.deleteUser = async (id) => { if(confirm('حذف المستخدم؟')) { await deleteDoc(doc(db, "users", id)); showToast('تم الحذف', 'success'); }};
-
-window.systemReset = async () => {
-    if (!confirm('تهيئة النظام وإنشاء بيانات تجريبية؟')) return;
-    const b = writeBatch(db);
-    b.set(doc(db, "users", "admin"), { pass: "1234", role: ROLES.ADMIN, fullName: "مدير عام" });
-    b.set(doc(db, "settings", "global_config"), { served_count: 0, outdoor_queue: 0 });
-    b.set(doc(db, "halls", "waiting_1"), { name: "انتظار 1", capacity: 40, current: 0, active: true, type: "انتظار" });
-    await b.commit();
-    alert('تمت التهيئة'); location.reload();
-};
+<script type="module" src="app.js"></script>
+</body>
+</html>
