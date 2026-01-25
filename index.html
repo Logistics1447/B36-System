@@ -26,60 +26,88 @@
             <input type="password" id="password" placeholder="كلمة المرور" class="w-full p-3 border-2 rounded-xl text-center font-bold">
             <button type="submit" class="w-full bg-gradient-to-r from-[#6B9AC4] to-[#88B2AC] text-white p-3 rounded-xl font-bold">دخول</button>
         </form>
-        
-        <div class="border-t border-slate-200 dark:border-slate-700 pt-4">
-            <p class="text-center text-xs mb-2 font-bold">تم التطوير بواسطة</p>
-            <div class="text-center space-y-1">
-                <p class="text-sm font-bold">عبدالرحمن المالكي</p>
-                <p class="text-sm font-bold">عبدالعزيز الأحمدي</p>
-                <p class="text-sm font-bold">عبدالعزيز الذبياني</p>
-            </div>
-            <div class="flex items-center justify-center gap-2 mt-3">
-                <span class="text-xs font-bold">Made with</span>
-                <span class="text-red-500 text-lg animate-heartbeat">❤️</span>
-                <span class="text-xs font-bold">2026</span>
-            </div>
-        </div>
-        
-        <button onclick="systemReset()" class="mt-4 text-xs text-[#C97C7C] w-full text-center font-bold">🔧 تهيئة النظام</button>
     </div>
 </div>
 
 <div id="mainApp" class="hidden min-h-screen">
-    <button id="hamburgerBtn" class="lg:hidden fixed top-4 right-4 z-50 bg-white dark:bg-slate-800 p-3 rounded-xl shadow-lg" onclick="toggleSidebar()">
-        <i class="ph ph-list text-2xl"></i>
-    </button>
-    
-    <div id="sidebarOverlay" class="lg:hidden hidden fixed inset-0 bg-black/50 z-30" onclick="toggleSidebar()"></div>
-    
     <aside id="sidebar" class="drawer-closed w-64 bg-white dark:bg-slate-800 border-l fixed h-full flex flex-col shadow-lg z-40">
         <div class="p-6 border-b">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h2 class="font-black text-xl">B36 v29</h2>
-                    <span class="text-xs text-slate-400">RBAC System</span>
-                </div>
-                <button onclick="toggleDark()" class="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
-                    <i class="ph ph-moon text-xl"></i>
-                </button>
-            </div>
+            <h2 class="font-black text-xl">B36 v29</h2>
             <div class="mt-3 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
-                <p class="text-xs text-slate-500">الدور</p>
-                <p id="userRoleDisplay" class="text-sm font-bold">--</p>
+                <p class="text-xs text-slate-500">الدور الحالي</p>
+                <p id="userRoleDisplay" class="text-sm font-bold text-[#6B9AC4]">--</p>
             </div>
         </div>
-        
         <nav id="navMenu" class="flex-1 p-4 space-y-2 overflow-y-auto"></nav>
-
-        <div class="p-4 border-t bg-slate-50 dark:bg-slate-900">
-            <button onclick="location.reload()" class="w-full py-2 bg-red-100 text-[#C97C7C] rounded-lg text-xs font-bold">تسجيل خروج</button>
-        </div>
+        <div class="p-4 border-t"><button onclick="location.reload()" class="w-full py-2 bg-red-100 text-[#C97C7C] rounded-lg text-xs font-bold">تسجيل خروج</button></div>
     </aside>
 
     <main class="flex-1 lg:mr-64 p-8 pt-20 lg:pt-8">
         <div id="kpiContainer" class="grid grid-cols-5 bg-white dark:bg-slate-800 rounded-xl shadow-sm p-3 mb-8 gap-4 border"></div>
         <div id="contentArea"></div>
     </main>
+</div>
+
+<div id="hallModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+        <h3 class="font-bold text-xl mb-6 flex items-center gap-2">
+            <i class="ph ph-door-open text-[#6B9AC4] text-2xl"></i>
+            <span id="hallModalTitle">إضافة قاعة جديدة</span>
+        </h3>
+        <div class="space-y-4">
+            <input type="hidden" id="hallId">
+            <div>
+                <label class="block text-sm font-bold mb-2">اسم القاعة</label>
+                <input type="text" id="hallName" class="w-full p-3 border-2 rounded-xl font-bold dark:bg-slate-700 dark:border-slate-600 outline-none focus:border-[#6B9AC4]">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold mb-2">السعة القصوى</label>
+                    <input type="number" id="hallCapacity" class="w-full p-3 border-2 rounded-xl font-bold dark:bg-slate-700 dark:border-slate-600 outline-none focus:border-[#6B9AC4]">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">النوع</label>
+                    <select id="hallType" class="w-full p-3 border-2 rounded-xl font-bold dark:bg-slate-700 dark:border-slate-600 outline-none focus:border-[#6B9AC4]">
+                        <option value="انتظار">انتظار</option>
+                        <option value="مقابلات">مقابلات</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700 rounded-xl">
+                <div>
+                    <p class="font-bold text-sm">القاعة مفعّلة</p>
+                </div>
+                <input type="checkbox" id="hallActive" class="w-6 h-6" checked>
+            </div>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeModal('hallModal')" class="flex-1 bg-slate-100 p-3 rounded-xl font-bold">إلغاء</button>
+            <button onclick="saveHall()" class="flex-1 bg-[#6B9AC4] text-white p-3 rounded-xl font-bold">حفظ</button>
+        </div>
+    </div>
+</div>
+
+<div id="userModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+        <h3 class="font-bold text-xl mb-6">إضافة مستخدم</h3>
+        <div class="space-y-4">
+            <input type="hidden" id="userId">
+            <input type="text" id="userName" placeholder="اسم المستخدم" class="w-full p-3 border-2 rounded-xl font-bold">
+            <input type="password" id="userPassword" placeholder="كلمة المرور" class="w-full p-3 border-2 rounded-xl font-bold">
+            <input type="text" id="userFullName" placeholder="الاسم الكامل" class="w-full p-3 border-2 rounded-xl font-bold">
+            <select id="userRole" onchange="toggleHallSelect()" class="w-full p-3 border-2 rounded-xl font-bold">
+                <option value="مدير_عام">مدير عام</option>
+                <option value="منظم_داخلي_عادي">منظم داخلي</option>
+            </select>
+            <div id="hallSelectContainer" class="hidden">
+                <select id="userHall" class="w-full p-3 border-2 rounded-xl font-bold"></select>
+            </div>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeModal('userModal')" class="flex-1 bg-slate-100 p-3 rounded-xl font-bold">إلغاء</button>
+            <button onclick="saveUser()" class="flex-1 bg-[#6B9AC4] text-white p-3 rounded-xl font-bold">حفظ</button>
+        </div>
+    </div>
 </div>
 
 <script type="module" src="app.js"></script>
