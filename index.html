@@ -2,8 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>B36 System v27 - Permissions Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>B36 System v28 - Mobile First</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -187,7 +187,7 @@
                 B36 System
             </h1>
             <span class="inline-block text-xs bg-gradient-to-r from-[#6B9AC4] to-[#88B2AC] text-white px-3 py-1 rounded-full font-bold">
-                v27 Production
+                v28 Mobile First
             </span>
         </div>
         
@@ -229,7 +229,7 @@
             <div class="flex justify-between items-center">
                 <div>
                     <h2 class="font-black text-xl">B36 Admin</h2>
-                    <span class="text-xs text-slate-400">v24 Incidents Pro</span>
+                    <span class="text-xs text-slate-400">v28 Mobile</span>
                 </div>
                 <button onclick="toggleDark()" class="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
                     <i class="ph ph-moon text-xl" id="darkIcon"></i>
@@ -240,10 +240,6 @@
         <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
             <button onclick="showView('dashboard')" class="nav-btn w-full flex items-center gap-3 p-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">
                 <i class="ph ph-squares-four text-xl text-[#6B9AC4]"></i> لوحة التحكم
-            </button>
-            <button onclick="showView('incidents')" class="nav-btn w-full flex items-center gap-3 p-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">
-                <i class="ph ph-warning-octagon text-xl text-[#C97C7C]"></i> البلاغات
-                <span id="incidentBadge" class="hidden mr-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full pulse-badge">0</span>
             </button>
             <button onclick="showView('stats')" class="nav-btn w-full flex items-center gap-3 p-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">
                 <i class="ph ph-chart-bar text-xl text-[#88B2AC]"></i> الإحصائيات
