@@ -167,6 +167,42 @@
         input:checked + .toggle-slider:before {
             transform: translateX(20px);
         }
+        
+        /* Mobile Sidebar Drawer */
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        #sidebar.drawer-closed {
+            transform: translateX(100%);
+        }
+        
+        @media (min-width: 1024px) {
+            #sidebar.drawer-closed {
+                transform: translateX(0) !important;
+            }
+        }
+        
+        #sidebarOverlay {
+            transition: opacity 0.3s ease-in-out;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .kpi-card { min-width: 0; }
+        }
+        
+        button, a, input[type="checkbox"], input[type="radio"], select {
+            min-height: 44px;
+        }
+        
+        @media (max-width: 640px) {
+            .responsive-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+        }
     </style>
     <script>
         tailwind.config = { 
@@ -180,10 +216,10 @@
 <div id="toastContainer" class="fixed top-4 left-4 z-50 space-y-2"></div>
 
 <!-- Login Screen -->
-<div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800">
-    <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md border-2 border-slate-200 dark:border-slate-700">
+<div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800 p-4">
+    <div class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl w-full max-w-md border-2 border-slate-200 dark:border-slate-700">
         <div class="text-center mb-6">
-            <h1 class="text-4xl font-black text-slate-800 dark:text-white mb-2">
+            <h1 class="text-3xl sm:text-4xl font-black text-slate-800 dark:text-white mb-2">
                 B36 System
             </h1>
             <span class="inline-block text-xs bg-gradient-to-r from-[#6B9AC4] to-[#88B2AC] text-white px-3 py-1 rounded-full font-bold">
@@ -222,9 +258,17 @@
 </div>
 
 <!-- Main App -->
-<div id="mainApp" class="hidden flex min-h-screen">
+<div id="mainApp" class="hidden min-h-screen">
+    <!-- Mobile Hamburger Button -->
+    <button id="hamburgerBtn" class="lg:hidden fixed top-4 right-4 z-50 bg-white dark:bg-slate-800 p-3 rounded-xl shadow-lg" onclick="toggleSidebar()">
+        <i class="ph ph-list text-2xl text-slate-800 dark:text-white"></i>
+    </button>
+    
+    <!-- Sidebar Overlay for Mobile -->
+    <div id="sidebarOverlay" class="lg:hidden hidden fixed inset-0 bg-black/50 z-30" onclick="toggleSidebar()"></div>
+    
     <!-- Sidebar -->
-    <aside class="w-64 bg-white dark:bg-slate-800 border-l dark:border-slate-700 fixed h-full flex flex-col shadow-lg z-20">
+    <aside id="sidebar" class="drawer-closed w-64 bg-white dark:bg-slate-800 border-l dark:border-slate-700 fixed h-full flex flex-col shadow-lg z-40 right-0 lg:right-auto">
         <div class="p-6 border-b dark:border-slate-700">
             <div class="flex justify-between items-center">
                 <div>
@@ -244,7 +288,7 @@
             <button onclick="showView('stats')" class="nav-btn w-full flex items-center gap-3 p-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">
                 <i class="ph ph-chart-bar text-xl text-[#88B2AC]"></i> الإحصائيات
             </button>
-            <button onclick="showView('logs')" class="nav-btn w-full flex items-center gap-3 p-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">
+            <button id="logsNavBtn" onclick="showView('logs')" class="nav-btn w-full flex items-center gap-3 p-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">
                 <i class="ph ph-clock-clockwise text-xl text-purple-500"></i> سجل العمليات
             </button>
             
@@ -270,28 +314,28 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 mr-64 p-8">
-        <!-- KPIs -->
-        <div class="flex flex-wrap bg-white dark:bg-slate-800 rounded-xl shadow-sm p-3 mb-8 gap-3 items-center justify-between border dark:border-slate-700">
-            <div class="text-center px-4">
+    <main class="flex-1 lg:mr-64 p-4 sm:p-6 lg:p-8 pt-20 lg:pt-8">
+        <!-- KPIs - Responsive Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 bg-white dark:bg-slate-800 rounded-xl shadow-sm p-3 mb-6 sm:mb-8 gap-3 sm:gap-4 border dark:border-slate-700" id="kpiContainer">
+            <div class="text-center p-2 sm:p-3">
                 <span class="block text-xs text-slate-400 mb-1">داخل المبنى</span>
-                <span id="kpiIndoor" class="text-2xl font-black text-[#6B9AC4]">0</span>
+                <span id="kpiIndoor" class="text-xl sm:text-2xl font-black text-[#6B9AC4]">0</span>
             </div>
-            <div class="text-center px-4 border-r dark:border-slate-700">
+            <div class="text-center p-2 sm:p-3 border-r dark:border-slate-700">
                 <span class="block text-xs text-slate-400 mb-1">ينتظر خارجاً</span>
-                <span id="kpiOutdoor" class="text-2xl font-black text-[#E8A87C]">0</span>
+                <span id="kpiOutdoor" class="text-xl sm:text-2xl font-black text-[#E8A87C]">0</span>
             </div>
-            <div class="text-center px-4 border-r dark:border-slate-700">
+            <div class="text-center p-2 sm:p-3 border-r dark:border-slate-700">
                 <span class="block text-xs text-slate-400 mb-1">الطاقة</span>
-                <span id="kpiCapacity" class="text-2xl font-black text-slate-600 dark:text-slate-300">0</span>
+                <span id="kpiCapacity" class="text-xl sm:text-2xl font-black text-slate-600 dark:text-slate-300">0</span>
             </div>
-            <div class="text-center px-4 border-r dark:border-slate-700">
+            <div class="text-center p-2 sm:p-3 border-r dark:border-slate-700">
                 <span class="block text-xs text-slate-400 mb-1">تمت خدمتهم</span>
-                <span id="kpiServed" class="text-2xl font-black text-[#88B2AC]">0</span>
+                <span id="kpiServed" class="text-xl sm:text-2xl font-black text-[#88B2AC]">0</span>
             </div>
-            <div class="text-center px-4 border-r dark:border-slate-700">
+            <div class="text-center p-2 sm:p-3 border-r dark:border-slate-700">
                 <span class="block text-xs text-slate-400 mb-1">الإشغال</span>
-                <span id="kpiOccupancy" class="text-2xl font-black text-[#B8A4C9]">0%</span>
+                <span id="kpiOccupancy" class="text-xl sm:text-2xl font-black text-[#B8A4C9]">0%</span>
             </div>
         </div>
 
@@ -576,16 +620,26 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
 let currentUser = null;
 let rooms = [];
 let logs = [];
-let reports = [];
 let users = [];
 let globalStats = { served: 0, outdoor_queue: 0 };
-let currentIncidentId = null;
-let uploadedImageFile = null;
+
+// Sidebar Toggle for Mobile
+window.toggleSidebar = () => {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    sidebar.classList.toggle('drawer-closed');
+    
+    if (sidebar.classList.contains('drawer-closed')) {
+        overlay.classList.add('hidden');
+    } else {
+        overlay.classList.remove('hidden');
+    }
+};
 
 // Dark Mode
 window.toggleDark = () => {
