@@ -1,9 +1,0 @@
-        // Create demo users
-        const demoUsers = [
-            { id: 'admin', fullName: 'مدير النظام', pass: '1234', role: ROLES.ADMIN },
-            { id: 'external_supervisor', fullName: 'مشرف خارجي', pass: '1234', role: ROLES.EXTERNAL_SUPERVISOR },
-            { id: 'building_supervisor', fullName: 'مشرف مبنى', pass: '1234', role: ROLES.BUILDING_SUPERVISOR },
-            { id: 'hall_staff_1', fullName: 'موظف قاعة 1', pass: '1234', role: ROLES.HALL_STAFF, assignedHallId: 'hall_3' },
-            { id: 'hall_staff_2', fullName: 'موظف قاعة 2', pass: '1234', role: ROLES.HALL_STAFF, assignedHallId: 'hall_4' },
-            { id: 'viewer', fullName: 'عارض', pass: '1234', role: ROLES.VIEWER }
-        ];
