@@ -1,0 +1,102 @@
+```
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===================================
+    // Helper Functions
+    // ===================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isRole(role) {
+      return isAuthenticated() && getUserRole() == role;
+    }
+
+    function isAdmin() {
+      return isRole('Admin');
+    }
+
+    function isInternalSupervisor() {
+      return isRole('InternalSupervisor');
+    }
+
+    function isAssignedToHall(hallId) {
+      return exists(/databases/$(database)/documents/hallAssignments/$(request.auth.uid + '_' + hallId));
+    }
+
+    // ===================================
+    // Collections Rules
+    // ===================================
+
+    // --- Users Collection ---
+    match /users/{userId} {
+      // Admins can manage users. Users can view their own profile.
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+      allow update: if isAdmin() || request.auth.uid == userId;
+    }
+
+    // --- Halls Collection ---
+    match /halls/{hallId} {
+      // Any authenticated user can read hall data for the dashboard.
+      allow read: if isAuthenticated();
+
+      // Only Admins and Supervisors can create/delete halls.
+      allow create, delete: if isAdmin() || isInternalSupervisor();
+
+      // Update logic for Hall Control (Commit Count)
+      allow update: if isAdmin() || isInternalSupervisor() || (isRole('InternalUser') && isAssignedToHall(hallId));
+
+      // Data Validation on write
+      // TODO: Add validation for all fields based on DATA_MODEL.md
+    }
+
+    // --- SystemState Collection ---
+    match /systemState/global {
+      // Any authenticated user can read the global state.
+      allow read: if isAuthenticated();
+
+      // Only External Supervisors/Admins can update the outside count.
+      allow write: if isAdmin() || isRole('ExternalSupervisor');
+    }
+
+    // --- TransferRequests Collection ---
+    match /transferRequests/{requestId} {
+      // Users can only view requests.
+      allow read: if isAuthenticated();
+
+      // Who can create requests?
+      allow create: if isAuthenticated(); // More specific logic needed in the app
+
+      // Who can update requests (accept, reject, confirm)?
+      allow update: if isAdmin() || isInternalSupervisor() || (isRole('InternalUser') && isAssignedToHall(resource.data.toHall.hallId));
+
+      // Data Validation on write
+      // TODO: Add validation for state transitions and required fields.
+    }
+
+    // --- HallAssignments Collection ---
+    match /hallAssignments/{assignmentId} {
+      // Only Admins and Supervisors can manage assignments.
+      allow read, write: if isAdmin() || isInternalSupervisor();
+    }
+
+    // --- AuditLog Collection ---
+    match /auditLog/{logId} {
+      // Only Admins and Supervisors can view the audit log.
+      allow read: if isAdmin() || isInternalSupervisor();
+
+      // No one can write directly to the audit log; it's done via backend functions.
+      allow write: if false; // Written via backend functions only
+    }
+  }
+}
+```
