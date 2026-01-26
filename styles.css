@@ -1,0 +1,399 @@
+/* ============================================
+   B36 v35 Mobile-First Styles
+   ============================================ */
+
+* { 
+    font-family: 'Alexandria', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body { 
+    transition: background-color 0.3s, color 0.3s;
+    overflow-x: hidden;
+    touch-action: manipulation;
+}
+
+:root {
+    --color-primary: #6B9AC4;
+    --color-secondary: #8BA888;
+    --color-accent: #D4A574;
+    --color-warning: #E8A87C;
+    --color-danger: #C97C7C;
+    --color-success: #88B2AC;
+}
+
+/* ============================================
+   Dark Mode
+   ============================================ */
+
+.dark body { background-color: #1a1f2e; color: #e2e8f0; }
+.dark .bg-white { background-color: #252b3b; }
+.dark .bg-slate-50 { background-color: #2a3142; }
+.dark .bg-slate-100 { background-color: #353d4f; }
+.dark .text-slate-800 { color: #e2e8f0; }
+.dark .text-slate-600 { color: #cbd5e1; }
+.dark .border-slate-200 { border-color: #475569; }
+.dark .border-slate-300 { border-color: #475569; }
+
+/* ============================================
+   Navigation & Drawer
+   ============================================ */
+
+.nav-btn {
+    min-height: 44px; /* iOS minimum touch target */
+    touch-action: manipulation;
+}
+
+.nav-btn.active {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    color: white;
+}
+
+/* Drawer Animation */
+#sidebar {
+    transition: transform 0.3s ease-in-out;
+}
+
+#sidebar.drawer-open {
+    transform: translateX(0) !important;
+}
+
+/* ============================================
+   View Content
+   ============================================ */
+
+.view-content {
+    min-height: 100vh;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+        transform: scale(0.95); 
+    }
+    to { 
+        opacity: 1; 
+        transform: scale(1); 
+    }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.animate-slideInRight {
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    10%, 30% { transform: scale(1.1); }
+    20%, 40% { transform: scale(1.05); }
+}
+
+.animate-heartbeat { 
+    animation: heartbeat 1.5s ease-in-out infinite; 
+}
+
+/* ============================================
+   Touch Interactions
+   ============================================ */
+
+button, a, .clickable {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    touch-action: manipulation;
+}
+
+button:active, .clickable:active {
+    transform: scale(0.97);
+}
+
+/* ============================================
+   Status Classes (من النظام القديم)
+   ============================================ */
+
+.status-draft { background: linear-gradient(135deg, #94a3b8, #64748b); }
+.status-pending { background: linear-gradient(135deg, #E8A87C, #D89A6D); }
+.status-accepted { background: linear-gradient(135deg, #88B2AC, #7AA39D); }
+.status-rejected { background: linear-gradient(135deg, #C97C7C, #B46D6D); }
+.status-in-transit { background: linear-gradient(135deg, #6B9AC4, #5A89B3); }
+.status-arrived { background: linear-gradient(135deg, #8BA888, #7A9879); }
+.status-closed { background: linear-gradient(135deg, #94a3b8, #64748b); }
+
+/* ============================================
+   Badges
+   ============================================ */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.badge-primary { background: var(--color-primary); color: white; }
+.badge-success { background: var(--color-success); color: white; }
+.badge-warning { background: var(--color-warning); color: white; }
+.badge-danger { background: var(--color-danger); color: white; }
+
+/* ============================================
+   Card Effects
+   ============================================ */
+
+.card-hover {
+    transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+}
+
+/* ============================================
+   Mobile Responsive Tables → Cards
+   ============================================ */
+
+@media (max-width: 1023px) {
+    .responsive-table {
+        display: none;
+    }
+    
+    .responsive-cards {
+        display: block;
+    }
+}
+
+@media (min-width: 1024px) {
+    .responsive-table {
+        display: table;
+    }
+    
+    .responsive-cards {
+        display: none;
+    }
+}
+
+/* ============================================
+   Mobile Optimizations
+   ============================================ */
+
+@media (max-width: 1023px) {
+    /* Remove horizontal scroll */
+    body {
+        overflow-x: hidden;
+    }
+    
+    /* Larger touch targets */
+    button, input, select, textarea {
+        min-height: 44px;
+        font-size: 16px; /* Prevent iOS zoom on focus */
+    }
+    
+    /* Comfortable padding */
+    .p-6 {
+        padding: 1rem;
+    }
+    
+    /* Smaller cards */
+    .rounded-xl {
+        border-radius: 0.75rem;
+    }
+    
+    /* Grid adjustments */
+    .grid {
+        gap: 0.75rem;
+    }
+}
+
+/* ============================================
+   Input Number (Remove Spinners)
+   ============================================ */
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { 
+    -webkit-appearance: none; 
+    margin: 0; 
+}
+
+input[type="number"] { 
+    -moz-appearance: textfield; 
+}
+
+/* ============================================
+   Toast Notifications
+   ============================================ */
+
+.toast { 
+    position: fixed; 
+    top: 20px; 
+    left: 20px; 
+    z-index: 9999; 
+    animation: slideIn 0.3s ease-out; 
+    max-width: 400px; 
+}
+
+@media (max-width: 640px) {
+    .toast {
+        left: 10px;
+        right: 10px;
+        max-width: calc(100% - 20px);
+    }
+}
+
+/* ============================================
+   Loading Spinner
+   ============================================ */
+
+.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.spinner {
+    border: 3px solid rgba(0,0,0,0.1);
+    border-left-color: var(--color-primary);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ============================================
+   Modal Backdrop
+   ============================================ */
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9998;
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* ============================================
+   SweetAlert2 Mobile Adjustments
+   ============================================ */
+
+@media (max-width: 640px) {
+    .swal2-popup {
+        width: 90% !important;
+        padding: 1.5rem !important;
+    }
+    
+    .swal2-title {
+        font-size: 1.25rem !important;
+    }
+    
+    .swal2-html-container {
+        font-size: 0.875rem !important;
+    }
+    
+    .swal2-input, .swal2-select {
+        font-size: 16px !important; /* Prevent iOS zoom */
+        min-height: 44px !important;
+    }
+}
+
+/* ============================================
+   Scrollbar Styling
+   ============================================ */
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.5);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.7);
+}
+
+/* ============================================
+   Dark Mode Scrollbar
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    ::-webkit-scrollbar-thumb {
+        background: rgba(71, 85, 105, 0.5);
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(71, 85, 105, 0.7);
+    }
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+.truncate-2-lines {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.safe-area-top {
+    padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+    #sidebar, #mobileTopBar, #drawerOverlay {
+        display: none !important;
+    }
+    
+    #mainContent {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+}
